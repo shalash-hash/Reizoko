@@ -1,0 +1,41 @@
+.planned-feature {
+  max-width: 480px;
+  margin: var(--space-12) auto;
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.planned-feature__icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto var(--space-4);
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-muted);
+  color: var(--text-muted);
+  font-size: 20px;
+}
+
+.planned-feature__header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.planned-feature h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.planned-feature p {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  font-size: var(--text-md);
+}

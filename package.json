@@ -1,0 +1,37 @@
+{
+  "name": "reizoko",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reizoko — unified content creation and publishing hub",
+  "scripts": {
+    "dev": "pnpm --filter @reizoko/desktop dev",
+    "build": "pnpm -r build",
+    "build:desktop": "pnpm --filter @reizoko/desktop build",
+    "tauri:dev": "pnpm --filter @reizoko/desktop tauri dev",
+    "tauri:build": "pnpm --filter @reizoko/desktop tauri build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test --if-present"
+  },
+  "devDependencies": {
+    "playwright": "^1.51.0",
+    "@playwright/test": "^1.51.0",
+    "@eslint/js": "^9.21.0",
+    "eslint": "^9.21.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "typescript-eslint": "^8.26.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  },
+  "packageManager": "pnpm@9.15.9"
+}

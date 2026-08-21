@@ -1,0 +1,222 @@
+/* Reizoko Design System v2 — strong visual hierarchy */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Level 1 — App shell (approved light) */
+  --bg-app: #f0eeea;
+  --bg-header: #f7f6f2;
+  --bg-sidebar: #f5f4f0;
+  --bg-sidebar-hover: rgba(0, 0, 0, 0.04);
+  --bg-sidebar-active: rgba(13, 148, 136, 0.12);
+  --text-sidebar: #52525b;
+  --text-sidebar-active: #0d9488;
+  --badge-planned-bg: #ede9fe;
+  --badge-planned-text: #7c3aed;
+
+  /* Level 2 — Workspace chrome */
+  --bg-workspace: #f0eeea;
+  --bg-tab-strip: #ebe9e4;
+  --bg-tab-active: #f0eeea;
+  --bg-tab-inactive: transparent;
+  --bg-tab-hover: rgba(0, 0, 0, 0.04);
+  --bg-inspector: #fafaf8;
+  --inspector-width: 280px;
+
+  /* Level 3 — Surfaces */
+  --bg-surface: #ffffff;
+  --bg-surface-elevated: #ffffff;
+  --bg-surface-muted: #f3f2ef;
+  --bg-surface-hover: #eae8e3;
+  --bg-surface-selected: rgba(13, 148, 136, 0.12);
+  --bg-input: #ffffff;
+  --bg-overlay: rgba(20, 20, 24, 0.45);
+  --bg-popover: #ffffff;
+  --bg-status: #ffffff;
+  --bg-preview-stage: #f0eeea;
+
+  /* Level 4 — Document canvas */
+  --bg-canvas: #ffffff;
+  --shadow-canvas: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 32px rgba(0, 0, 0, 0.08),
+    0 24px 64px rgba(0, 0, 0, 0.04);
+
+  /* Legacy */
+  --bg: var(--bg-app);
+  --surface: var(--bg-surface);
+  --surface-elevated: var(--bg-surface-elevated);
+  --surface-muted: var(--bg-surface-muted);
+
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-default: rgba(0, 0, 0, 0.1);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --border-focus: #0d9488;
+  --border: var(--border-default);
+
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --text-disabled: #a1a1aa;
+  --text-inverse: #ffffff;
+  --text: var(--text-primary);
+  --text-status: #71717a;
+
+  --accent: #0d9488;
+  --accent-hover: #0f766e;
+  --accent-soft: rgba(13, 148, 136, 0.14);
+  --accent-muted: rgba(13, 148, 136, 0.08);
+  --accent-glow: rgba(13, 148, 136, 0.25);
+
+  --danger: #dc2626;
+  --danger-soft: rgba(220, 38, 38, 0.1);
+  --warning: #d97706;
+  --warning-soft: rgba(217, 119, 6, 0.12);
+  --success: #16a34a;
+  --success-soft: rgba(22, 163, 74, 0.12);
+  --info: #2563eb;
+  --info-soft: rgba(37, 99, 235, 0.1);
+
+  --preview-bg: #e0ded8;
+  --tg-bubble: #effdde;
+  --tg-bubble-text: #18181b;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.14);
+  --shadow: var(--shadow-md);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Code', Consolas, monospace;
+  --text-xs: 11px;
+  --text-sm: 13px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 17px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 32px;
+  --text-4xl: 40px;
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  --sidebar-width: 220px;
+  --sidebar-collapsed-width: 68px;
+  --header-height: 48px;
+  --tab-bar-height: 44px;
+  --status-bar-height: 40px;
+  --editor-max-width: 680px;
+
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--accent);
+  --workspace-pattern: radial-gradient(circle at 1px 1px, rgba(0, 0, 0, 0.04) 1px, transparent 0);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg-app: #0c0c0e;
+  --bg-header: #141416;
+  --bg-sidebar: #141416;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.05);
+  --bg-sidebar-active: rgba(45, 212, 191, 0.12);
+  --text-sidebar: #a1a1aa;
+  --text-sidebar-active: #2dd4bf;
+  --badge-planned-bg: rgba(124, 58, 237, 0.2);
+  --badge-planned-text: #c4b5fd;
+
+  --bg-workspace: #111114;
+  --bg-tab-strip: #0e0e11;
+  --bg-tab-active: #111114;
+  --bg-tab-hover: rgba(255, 255, 255, 0.04);
+  --bg-inspector: #18181c;
+
+  --bg-surface: #1a1a1f;
+  --bg-surface-elevated: #222228;
+  --bg-surface-muted: #18181d;
+  --bg-surface-hover: #25252b;
+  --bg-surface-selected: rgba(45, 212, 191, 0.12);
+  --bg-input: #1a1a1f;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+  --bg-popover: #1e1e24;
+  --bg-status: #141416;
+  --bg-preview-stage: #0e0e12;
+
+  --bg-canvas: #1a1a1f;
+  --shadow-canvas: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+
+  --bg: var(--bg-app);
+  --surface: var(--bg-surface);
+  --surface-elevated: var(--bg-surface-elevated);
+  --surface-muted: var(--bg-surface-muted);
+
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --border-focus: #2dd4bf;
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-disabled: #52525b;
+  --text-inverse: #18181b;
+  --text-status: #71717a;
+
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-soft: rgba(45, 212, 191, 0.15);
+  --accent-muted: rgba(45, 212, 191, 0.08);
+  --accent-glow: rgba(45, 212, 191, 0.2);
+
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.12);
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.12);
+  --info: #60a5fa;
+  --info-soft: rgba(96, 165, 250, 0.12);
+
+  --preview-bg: #0e0e12;
+  --tg-bubble: #2b5278;
+  --tg-bubble-text: #eef0f4;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 24px 64px rgba(0, 0, 0, 0.5);
+
+  --focus-ring: 0 0 0 2px var(--bg-canvas), 0 0 0 4px var(--accent);
+  --workspace-pattern: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
+  }
+}

@@ -1,0 +1,123 @@
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-app);
+}
+
+.app-shell__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.app-shell__sidebar {
+  display: flex;
+  flex-direction: column;
+  width: var(--sidebar-width);
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  transition: width var(--transition-base);
+}
+
+.app-shell--collapsed .app-shell__sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+.app-shell__sidebar-top {
+  padding: var(--space-4) var(--space-3) var(--space-1);
+  min-height: 44px;
+}
+
+.app-shell--collapsed .app-shell__sidebar-top {
+  display: none;
+}
+
+.app-shell__sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+.app-shell__sidebar-logo {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.app-shell__collapse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2);
+  padding: 9px var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-sidebar);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.app-shell--collapsed .app-shell__collapse {
+  justify-content: center;
+  padding: 9px;
+}
+
+.app-shell__collapse:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-sidebar-active);
+}
+
+.app-shell__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg-workspace);
+}
+
+.app-shell__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.app-shell__workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell__canvas {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-workspace);
+  background-image: var(--workspace-pattern);
+  background-size: 20px 20px;
+}
+
+@media (max-width: 900px) {
+  .app-shell__sidebar {
+    width: var(--sidebar-collapsed-width);
+  }
+
+  .app-shell__sidebar-brand {
+    display: none;
+  }
+}

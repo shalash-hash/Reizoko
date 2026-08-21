@@ -1,0 +1,109 @@
+.vk-preview {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  max-width: 480px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.vk-preview__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.vk-preview__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: #0077ff;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+}
+
+.vk-preview__header-text {
+  flex: 1;
+}
+
+.vk-preview__name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: var(--text-md);
+}
+
+.vk-preview__time {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.vk-preview__more {
+  color: var(--text-muted);
+}
+
+.vk-preview__text {
+  font-size: var(--text-md);
+  line-height: var(--leading-relaxed);
+  white-space: pre-wrap;
+  margin-bottom: var(--space-3);
+  color: var(--text-primary);
+}
+
+.vk-preview__photos {
+  display: grid;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.vk-preview__photos--1 {
+  grid-template-columns: 1fr;
+}
+
+.vk-preview__photos--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.vk-preview__photos--3 {
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+}
+
+.vk-preview__photos img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+
+.vk-preview__actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.vk-preview__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  cursor: default;
+}
+
+.vk-preview__action:hover {
+  background: var(--bg-surface-muted);
+}

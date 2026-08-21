@@ -1,0 +1,110 @@
+.ig-preview {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  max-width: 400px;
+  margin: 0 auto;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.ig-preview__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.ig-preview__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  border: 2px solid rgba(225, 48, 108, 0.3);
+}
+
+.ig-preview__username {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.ig-preview__location {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.ig-preview__media {
+  position: relative;
+  background: #000;
+}
+
+.ig-preview__media img {
+  width: 100%;
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.ig-preview__placeholder {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: var(--space-6);
+}
+
+.ig-preview__carousel-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+}
+
+.ig-preview__carousel-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.ig-preview__carousel-dots span.active {
+  background: #3897f0;
+}
+
+.ig-preview__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  color: var(--text-primary);
+}
+
+.ig-preview__bookmark {
+  margin-left: auto;
+}
+
+.ig-preview__likes {
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ig-preview__caption {
+  padding: var(--space-2) var(--space-4) var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  white-space: pre-wrap;
+  color: var(--text-primary);
+}
+
+.ig-preview__caption strong {
+  font-weight: 600;
+  margin-right: 6px;
+}

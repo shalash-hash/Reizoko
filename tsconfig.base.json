@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "paths": {
+      "@reizoko/shared": ["./packages/shared/src/index.ts"],
+      "@reizoko/core": ["./packages/core/src/index.ts"],
+      "@reizoko/database": ["./packages/database/src/index.ts"],
+      "@reizoko/platform-sdk": ["./packages/platform-sdk/src/index.ts"],
+      "@reizoko/ui": ["./packages/ui/src/index.ts"],
+      "@reizoko/editor": ["./packages/editor/src/index.ts"],
+      "@reizoko/platform-instagram": ["./platforms/instagram/src/index.ts"],
+      "@reizoko/platform-telegram": ["./platforms/telegram/src/index.ts"],
+      "@reizoko/platform-vk": ["./platforms/vk/src/index.ts"]
+    }
+  }
+}

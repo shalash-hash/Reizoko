@@ -1,0 +1,18 @@
+.platform-preview-panel {
+  min-height: 100%;
+  padding: var(--space-8) var(--space-6);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.platform-preview-panel__stage {
+  width: 100%;
+  max-width: 480px;
+}
+
+.platform-preview-panel__stage .ig-preview,
+.platform-preview-panel__stage .tg-preview,
+.platform-preview-panel__stage .vk-preview {
+  margin: 0 auto;
+}
