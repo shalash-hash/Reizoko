@@ -2,12 +2,18 @@ import type { PlatformPreviewProps } from '@reizoko/platform-sdk';
 import { CheckCheck } from 'lucide-react';
 import './telegram-preview.css';
 
-export function TelegramPreview({ transformed, getMediaUrl }: PlatformPreviewProps) {
+export function TelegramPreview({ transformed, getMediaUrl, socialAccount }: PlatformPreviewProps) {
+  const channelName = socialAccount?.displayName ?? 'Reizoko Channel';
+  const channelHandle = socialAccount?.handle ?? '@reizoko';
+
   return (
-    <div className="tg-preview">
+    <div className="tg-preview" data-testid="telegram-preview">
       <div className="tg-preview__channel">
         <span className="tg-preview__channel-icon">✈</span>
-        Reizoko Channel
+        <span data-testid="preview-account-name">{channelName}</span>
+        <span className="tg-preview__channel-handle" data-testid="preview-account-handle">
+          {channelHandle}
+        </span>
       </div>
 
       <div className="tg-preview__bubble">

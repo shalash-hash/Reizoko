@@ -4,6 +4,10 @@ export interface Migration {
   up: string;
 }
 
+import { migrationV2 } from './v2-revision-metadata.js';
+import { migrationV3 } from './v3-publication-architecture.js';
+import { migrationV4 } from './v4-social-accounts-architecture.js';
+
 export const MIGRATIONS: Migration[] = [
   {
     version: 1,
@@ -87,6 +91,9 @@ export const MIGRATIONS: Migration[] = [
       CREATE INDEX IF NOT EXISTS idx_publications_revision ON publications(content_revision_id);
     `,
   },
+  migrationV2,
+  migrationV3,
+  migrationV4,
 ];
 
 import type { DatabaseClient } from '../client/database-client.js';

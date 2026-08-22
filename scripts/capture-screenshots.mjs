@@ -15,10 +15,18 @@ const outDir = path.join(root, 'docs', 'screenshots');
 const scenes = [
   { name: 'editor-light', scene: 'editor-light' },
   { name: 'editor-dark', scene: 'editor-dark' },
-  { name: 'instagram-light', scene: 'instagram-light' },
-  { name: 'telegram-dark', scene: 'telegram-dark' },
   { name: 'library-light', scene: 'library-light' },
-  { name: 'platform-picker', scene: 'platform-picker' },
+  { name: 'library-dark', scene: 'library-dark' },
+  { name: 'instagram-light', scene: 'instagram-light' },
+  { name: 'instagram-dark', scene: 'instagram-dark' },
+  { name: 'telegram-light', scene: 'telegram-light' },
+  { name: 'telegram-dark', scene: 'telegram-dark' },
+  { name: 'vk-light', scene: 'vk-light' },
+  { name: 'vk-dark', scene: 'vk-dark' },
+  { name: 'platform-picker-light', scene: 'platform-picker-light' },
+  { name: 'platform-picker-dark', scene: 'platform-picker-dark' },
+  { name: 'settings-light', scene: 'settings-light' },
+  { name: 'settings-dark', scene: 'settings-dark' },
 ];
 
 function startPreview() {
@@ -58,7 +66,6 @@ function startPreview() {
 async function main() {
   await mkdir(outDir, { recursive: true });
 
-  // Build with screenshot mode
   await new Promise((resolve, reject) => {
     const build = spawn('pnpm', ['--filter', '@reizoko/desktop', 'build'], {
       cwd: root,
@@ -80,7 +87,7 @@ async function main() {
 
   for (const { name, scene } of scenes) {
     await page.evaluate((s) => window.__REIZOKO_SCREENSHOT__?.applyScene(s), scene);
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(700);
     await page.screenshot({ path: path.join(outDir, `${name}.png`), fullPage: false });
     console.log(`Saved ${name}.png`);
   }

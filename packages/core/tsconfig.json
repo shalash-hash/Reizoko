@@ -6,6 +6,7 @@
     "composite": true,
     "baseUrl": "../.."
   },
-  "references": [{ "path": "../shared" }],
-  "include": ["src/**/*"]
+  "references": [{ "path": "../shared" }, { "path": "../platform-sdk" }],
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
 }

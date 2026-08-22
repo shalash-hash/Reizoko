@@ -2,6 +2,8 @@ export * from './types/capabilities.js';
 export * from './types/content.js';
 export * from './types/publication.js';
 export * from './types/scheduling.js';
+export * from './types/social-account.js';
+export * from './types/backup.js';
 export * from './types/workspace.js';
 export * from './types/media.js';
 export * from './types/sync.js';

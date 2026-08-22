@@ -13,6 +13,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
 }
 
 .ig-preview__avatar {
@@ -20,7 +21,7 @@
   height: 36px;
   border-radius: var(--radius-full);
   background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-  border: 2px solid rgba(225, 48, 108, 0.3);
+  border: 2px solid color-mix(in srgb, var(--platform-instagram) 30%, transparent);
 }
 
 .ig-preview__username {
@@ -36,7 +37,7 @@
 
 .ig-preview__media {
   position: relative;
-  background: #000;
+  background: var(--ig-media-bg);
 }
 
 .ig-preview__media img {
@@ -50,8 +51,8 @@
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
-  color: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, var(--ig-placeholder-from), var(--ig-placeholder-to));
+  color: var(--ig-placeholder-text);
   font-size: var(--text-sm);
   text-align: center;
   padding: var(--space-6);
@@ -70,11 +71,11 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--ig-carousel-dot);
 }
 
 .ig-preview__carousel-dots span.active {
-  background: #3897f0;
+  background: var(--ig-carousel-active);
 }
 
 .ig-preview__actions {
@@ -83,6 +84,7 @@
   gap: var(--space-4);
   padding: var(--space-3) var(--space-4);
   color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 .ig-preview__bookmark {
@@ -94,6 +96,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 .ig-preview__caption {
@@ -102,9 +105,14 @@
   line-height: var(--leading-normal);
   white-space: pre-wrap;
   color: var(--text-primary);
+  background: var(--bg-surface);
 }
 
 .ig-preview__caption strong {
   font-weight: 600;
   margin-right: 6px;
+}
+
+.ig-preview__caption .muted {
+  color: var(--text-muted);
 }

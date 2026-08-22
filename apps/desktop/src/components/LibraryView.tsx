@@ -17,7 +17,7 @@ export function LibraryView() {
   const [layout, setLayout] = useState<LibraryLayout>('grid');
 
   return (
-    <div className="library-view">
+    <div className="library-view" data-testid="library-view">
       <header className="library-view__header">
         <div>
           <div className="library-view__title-row">
@@ -28,7 +28,7 @@ export function LibraryView() {
           </div>
           <p className="library-view__subtitle">Сохранённые Master Post для повторного использования</p>
         </div>
-        <Button variant="primary" onClick={() => void createNewDraft()}>
+        <Button variant="primary" data-testid="new-post" onClick={() => void createNewDraft()}>
           <Plus size={16} strokeWidth={2} aria-hidden />
           Новый пост
         </Button>
@@ -39,11 +39,13 @@ export function LibraryView() {
           value={libraryQuery}
           onChange={(value) => void loadLibrary(value)}
           placeholder="Поиск по названию и тексту…"
+          testId="library-search"
         />
         <div className="library-view__layout" role="group" aria-label="Вид списка">
           <IconButton
             label="Сетка"
             size="sm"
+            data-testid="library-grid"
             className={layout === 'grid' ? 'library-view__layout-btn--active' : ''}
             onClick={() => setLayout('grid')}
           >
@@ -52,6 +54,7 @@ export function LibraryView() {
           <IconButton
             label="Список"
             size="sm"
+            data-testid="library-list"
             className={layout === 'list' ? 'library-view__layout-btn--active' : ''}
             onClick={() => setLayout('list')}
           >
@@ -78,9 +81,9 @@ export function LibraryView() {
           }
         />
       ) : (
-        <div className={`library-view__grid library-view__grid--${layout}`}>
+        <div className={`library-view__grid library-view__grid--${layout}`} data-testid={`library-layout-${layout}`}>
           {library.map((item) => (
-            <article key={item.id} className="library-card">
+            <article key={item.id} className="library-card" data-testid="library-card">
               <div className="library-card__preview" aria-hidden>
                 <div className="library-card__preview-line library-card__preview-line--title" />
                 <div className="library-card__preview-line" />
@@ -94,11 +97,11 @@ export function LibraryView() {
                 </div>
               </div>
               <div className="library-card__actions">
-                <Button size="sm" onClick={() => void openContentItem(item.id)}>
+                <Button size="sm" data-testid="library-open" onClick={() => void openContentItem(item.id)}>
                   <FolderOpen size={14} strokeWidth={2} aria-hidden />
                   Открыть
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => void duplicateContentItem(item.id)}>
+                <Button size="sm" variant="ghost" data-testid="library-duplicate" onClick={() => void duplicateContentItem(item.id)}>
                   <Copy size={14} strokeWidth={2} aria-hidden />
                   Копия
                 </Button>

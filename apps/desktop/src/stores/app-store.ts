@@ -1,12 +1,54 @@
 import { create } from 'zustand';
-import type { ContentBlock, ContentItemWithRevision, ContentItemSummary, WorkspaceState } from '@reizoko/shared';
+import type {
+  ContentBlock,
+  ContentItemWithRevision,
+  ContentItemSummary,
+  CreateSocialAccountInput,
+  SocialAccount,
+  UpdateSocialAccountInput,
+  WorkspaceState,
+} from '@reizoko/shared';
 import type { ThemeMode } from '@reizoko/ui';
 import { THEME_SETTINGS_KEY, readStoredThemeMode, persistThemeMode } from '@reizoko/ui';
-import { ContentService } from '@reizoko/core';
+import {
+  ContentService,
+  PublicationService,
+  SocialAccountService,
+  addPlatformTarget,
+  createPlatformTarget,
+  getPlatformTargetLabel,
+  getTabIdForTarget,
+  normalizeWorkspaceState,
+  parsePlatformTabId,
+  removePlatformTarget,
+  removeTargetsForAccount,
+  toPublicationTarget,
+  type GroupedRevisionHistory,
+} from '@reizoko/core';
+import { platformRegistry } from '@reizoko/platform-sdk';
 import type { DatabaseContext } from '@reizoko/database';
 import { DEFAULT_WORKSPACE } from '@reizoko/core';
 import { createBlock } from '@reizoko/core';
 import { generateId, nowIso } from '@reizoko/shared';
+import type { BackupSummary } from '@reizoko/shared';
+import {
+  createUserBackup,
+  exportUserJson,
+  pickBackupFile,
+  restoreUserBackup,
+  validateUserBackup,
+  writeBackupToPath,
+  restoreBackupFromPath,
+  createBackupService,
+  writeBytesToPath,
+} from '../services/backup-runtime';
+import { isSmokeTestMode } from '../config/smoke-test';
+import { appDataDir, join } from '@tauri-apps/api/path';
+import { getAllPlatformCatalog } from '../platforms/planned-catalog';
+
+function isValidPlatformId(platformId: string): boolean {
+  return getAllPlatformCatalog(platformRegistry).some((platform) => platform.id === platformId);
+}
 
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
@@ -16,6 +58,9 @@ interface AppState {
   error: string | null;
   db: DatabaseContext | null;
   contentService: ContentService | null;
+  publicationService: PublicationService | null;
+  socialAccountService: SocialAccountService | null;
+  accounts: SocialAccount[];
   content: ContentItemWithRevision | null;
   blocks: ContentBlock[];
   workspace: WorkspaceState;
@@ -25,17 +70,32 @@ interface AppState {
   showPlatformPicker: boolean;
   themeMode: ThemeMode;
   saveStatus: SaveStatus;
+  showRevisionHistory: boolean;
+  groupedHistory: GroupedRevisionHistory[];
+  selectedRevisionId: string | null;
+  restoreCandidateId: string | null;
+  publicationPrepareConfirmation: string[] | null;
+  publicationPrepareError: string | null;
+  restoreCandidate: { path: string; summary: BackupSummary } | null;
 
   initialize: (db: DatabaseContext) => Promise<void>;
   setBlocks: (blocks: ContentBlock[]) => void;
   setTitle: (title: string) => void;
   saveContent: () => Promise<void>;
+  openPlatformTarget: (platformId: string, socialAccountId?: string | null) => Promise<void>;
+  closePlatformTarget: (targetId: string) => Promise<void>;
   openPlatformTab: (platformId: string) => Promise<void>;
   closePlatformTab: (platformId: string) => Promise<void>;
   setActiveTab: (tabId: string) => Promise<void>;
   setSidebarSection: (section: WorkspaceState['sidebarSection']) => Promise<void>;
   setShowPlatformPicker: (show: boolean) => void;
   loadLibrary: (query?: string) => Promise<void>;
+  loadAccounts: () => Promise<void>;
+  createAccount: (input: CreateSocialAccountInput) => Promise<SocialAccount>;
+  updateAccount: (id: string, input: UpdateSocialAccountInput) => Promise<SocialAccount>;
+  removeAccount: (id: string) => Promise<void>;
+  setAccountActive: (id: string, isActive: boolean) => Promise<void>;
+  getAccountById: (id?: string | null) => SocialAccount | null;
   openContentItem: (id: string) => Promise<void>;
   duplicateContentItem: (id: string) => Promise<void>;
   createNewDraft: () => Promise<void>;
@@ -43,17 +103,66 @@ interface AppState {
   setThemeMode: (mode: ThemeMode) => Promise<void>;
   initializeDemo: () => void;
   applyScreenshotScene: (scene: ScreenshotScene) => void;
+  openRevisionHistory: () => Promise<void>;
+  closeRevisionHistory: () => void;
+  loadRevisionHistory: () => Promise<void>;
+  selectRevisionPreview: (revisionId: string) => void;
+  createRevisionCheckpoint: () => Promise<void>;
+  requestRestoreRevision: (revisionId: string) => void;
+  confirmRestoreRevision: () => Promise<void>;
+  cancelRestoreRevision: () => void;
+  fetchRevision: (revisionId: string) => Promise<ContentItemWithRevision['revision'] | null>;
+  preparePublicationBatch: () => Promise<void>;
+  dismissPublicationConfirmation: () => void;
+  getPublicationState: () => Promise<{
+    batches: Awaited<ReturnType<PublicationService['listBatchesByContentItem']>>;
+    publications: Awaited<ReturnType<PublicationService['listPublicationsByContentItem']>>;
+  } | null>;
+  createBackup: () => Promise<{ path: string; warnings: string[] }>;
+  exportJsonBackup: () => Promise<string>;
+  beginRestoreBackup: () => Promise<void>;
+  confirmRestoreBackup: () => Promise<void>;
+  cancelRestoreBackup: () => void;
+  reloadApplicationState: () => Promise<void>;
 }
 
 export type ScreenshotScene =
   | 'editor-light'
   | 'editor-dark'
-  | 'instagram-light'
-  | 'telegram-dark'
   | 'library-light'
-  | 'platform-picker';
+  | 'library-dark'
+  | 'instagram-light'
+  | 'instagram-dark'
+  | 'telegram-light'
+  | 'telegram-dark'
+  | 'vk-light'
+  | 'vk-dark'
+  | 'platform-picker-light'
+  | 'platform-picker-dark'
+  | 'settings-light'
+  | 'settings-dark';
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelScheduledSave() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+}
+
+function demoPlatformTargets(platformIds: string[]) {
+  return platformIds.map((platformId) => createPlatformTarget(platformId, null));
+}
+
+async function persistWorkspace(
+  db: DatabaseContext,
+  workspace: WorkspaceState,
+): Promise<WorkspaceState> {
+  const normalized = normalizeWorkspaceState(workspace);
+  await db.workspace.saveState(normalized);
+  return normalized;
+}
 
 export const useAppStore = create<AppState>((set, get) => ({
   initialized: false,
@@ -61,6 +170,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   error: null,
   db: null,
   contentService: null,
+  publicationService: null,
+  socialAccountService: null,
+  accounts: [],
   content: null,
   blocks: [],
   workspace: { ...DEFAULT_WORKSPACE },
@@ -70,11 +182,29 @@ export const useAppStore = create<AppState>((set, get) => ({
   showPlatformPicker: false,
   themeMode: readStoredThemeMode(),
   saveStatus: 'saved',
+  showRevisionHistory: false,
+  groupedHistory: [],
+  selectedRevisionId: null,
+  restoreCandidateId: null,
+  publicationPrepareConfirmation: null,
+  publicationPrepareError: null,
+  restoreCandidate: null,
 
   initialize: async (db) => {
     try {
       const contentService = new ContentService(db.content);
-      const workspace = await db.workspace.getState();
+      const publicationService = new PublicationService(
+        db.content,
+        db.publicationBatches,
+        db.publications,
+        platformRegistry,
+      );
+      const socialAccountService = new SocialAccountService(
+        db.socialAccounts,
+        isValidPlatformId,
+      );
+
+      let workspace = await db.workspace.getState();
       const storedTheme = await db.settings.get<ThemeMode>(THEME_SETTINGS_KEY, readStoredThemeMode());
       persistThemeMode(storedTheme);
 
@@ -84,18 +214,24 @@ export const useAppStore = create<AppState>((set, get) => ({
       }
       if (!content) {
         content = await contentService.createDraft();
-        workspace.currentContentItemId = content.id;
-        await db.workspace.saveState(workspace);
+        workspace = await persistWorkspace(db, {
+          ...workspace,
+          currentContentItemId: content.id,
+        });
       }
 
       const mediaItems = await db.media.list();
       const mediaPaths = Object.fromEntries(mediaItems.map((m) => [m.id, m.localPath]));
+      const accounts = await socialAccountService.listAllAccountsIncludingInactive();
 
       set({
         initialized: true,
         loading: false,
         db,
         contentService,
+        publicationService,
+        socialAccountService,
+        accounts,
         content,
         blocks: content.revision.blocks,
         workspace,
@@ -137,9 +273,11 @@ export const useAppStore = create<AppState>((set, get) => ({
     try {
       set({ saveStatus: 'saving' });
       const updated = await contentService.save(content, blocks);
-      workspace.currentContentItemId = updated.id;
-      await db.workspace.saveState(workspace);
-      set({ content: updated, blocks: updated.revision.blocks, saveStatus: 'saved' });
+      const nextWorkspace = await persistWorkspace(db, {
+        ...workspace,
+        currentContentItemId: updated.id,
+      });
+      set({ content: updated, blocks: updated.revision.blocks, workspace: nextWorkspace, saveStatus: 'saved' });
     } catch {
       set({ saveStatus: 'error' });
     }
@@ -154,49 +292,79 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
-  openPlatformTab: async (platformId) => {
+  openPlatformTarget: async (platformId, socialAccountId = null) => {
     const { db, workspace } = get();
     if (!db) return;
 
-    if (!workspace.openPlatformTabs.includes(platformId)) {
-      workspace.openPlatformTabs = [...workspace.openPlatformTabs, platformId];
-    }
-    workspace.activeTabId = `platform-${platformId}`;
-    await db.workspace.saveState(workspace);
-    set({ workspace, showPlatformPicker: false });
+    const nextTargets = addPlatformTarget(
+      workspace.openPlatformTargets,
+      platformId,
+      socialAccountId,
+    );
+    const opened = nextTargets.find(
+      (target) =>
+        target.platformId === platformId &&
+        (target.socialAccountId ?? null) === (socialAccountId ?? null),
+    );
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      openPlatformTargets: nextTargets,
+      activeTabId: opened ? getTabIdForTarget(opened) : workspace.activeTabId,
+    });
+    set({ workspace: nextWorkspace, showPlatformPicker: false });
+  },
+
+  closePlatformTarget: async (targetId) => {
+    const { db, workspace } = get();
+    if (!db) return;
+
+    const closingTabId = getTabIdForTarget({
+      id: targetId,
+      platformId: '',
+      socialAccountId: null,
+    });
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      openPlatformTargets: removePlatformTarget(workspace.openPlatformTargets, targetId),
+      activeTabId: workspace.activeTabId === closingTabId ? 'editor' : workspace.activeTabId,
+    });
+    set({ workspace: nextWorkspace });
+  },
+
+  openPlatformTab: async (platformId) => {
+    await get().openPlatformTarget(platformId, null);
   },
 
   closePlatformTab: async (platformId) => {
-    const { db, workspace } = get();
-    if (!db) return;
-
-    workspace.openPlatformTabs = workspace.openPlatformTabs.filter((id) => id !== platformId);
-    if (workspace.activeTabId === `platform-${platformId}`) {
-      workspace.activeTabId = 'editor';
+    const target = get().workspace.openPlatformTargets.find(
+      (item) => item.platformId === platformId && !item.socialAccountId,
+    );
+    if (target) {
+      await get().closePlatformTarget(target.id);
     }
-    await db.workspace.saveState(workspace);
-    set({ workspace });
   },
 
   setActiveTab: async (tabId) => {
     const { db, workspace } = get();
     if (!db) return;
-    workspace.activeTabId = tabId;
-    await db.workspace.saveState(workspace);
-    set({ workspace });
+    const nextWorkspace = await persistWorkspace(db, { ...workspace, activeTabId: tabId });
+    set({ workspace: nextWorkspace });
   },
 
   setSidebarSection: async (section) => {
     const { db, workspace } = get();
     if (!db) return;
-    workspace.sidebarSection = section;
-    if (section === 'editor') {
-      workspace.activeTabId = 'editor';
-    }
-    await db.workspace.saveState(workspace);
-    set({ workspace });
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      sidebarSection: section,
+      ...(section === 'editor' ? { activeTabId: 'editor' } : {}),
+    });
+    set({ workspace: nextWorkspace });
     if (section === 'library') {
       await get().loadLibrary();
+    }
+    if (section === 'accounts') {
+      await get().loadAccounts();
     }
   },
 
@@ -210,16 +378,87 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ library, libraryQuery: q });
   },
 
+  loadAccounts: async () => {
+    const { socialAccountService } = get();
+    if (!socialAccountService) return;
+    const accounts = await socialAccountService.listAllAccountsIncludingInactive();
+    set({ accounts });
+  },
+
+  createAccount: async (input) => {
+    const { socialAccountService } = get();
+    if (!socialAccountService) throw new Error('Accounts service unavailable');
+    const account = await socialAccountService.createAccount(input);
+    await get().loadAccounts();
+    return account;
+  },
+
+  updateAccount: async (id, input) => {
+    const { socialAccountService } = get();
+    if (!socialAccountService) throw new Error('Accounts service unavailable');
+    const account = await socialAccountService.updateAccount(id, input);
+    await get().loadAccounts();
+    return account;
+  },
+
+  removeAccount: async (id) => {
+    const { socialAccountService, db, workspace } = get();
+    if (!socialAccountService || !db) return;
+    await socialAccountService.removeAccount(id);
+    const nextTargets = removeTargetsForAccount(workspace.openPlatformTargets, id);
+    const removedTabIds = new Set(
+      workspace.openPlatformTargets
+        .filter((target) => target.socialAccountId === id)
+        .map((target) => getTabIdForTarget(target)),
+    );
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      openPlatformTargets: nextTargets,
+      activeTabId: removedTabIds.has(workspace.activeTabId) ? 'editor' : workspace.activeTabId,
+    });
+    await get().loadAccounts();
+    set({ workspace: nextWorkspace });
+  },
+
+  setAccountActive: async (id, isActive) => {
+    const { socialAccountService, db, workspace } = get();
+    if (!socialAccountService || !db) return;
+    await socialAccountService.setAccountActive(id, isActive);
+    let nextWorkspace = workspace;
+    if (!isActive) {
+      const nextTargets = removeTargetsForAccount(workspace.openPlatformTargets, id);
+      const removedTabIds = new Set(
+        workspace.openPlatformTargets
+          .filter((target) => target.socialAccountId === id)
+          .map((target) => getTabIdForTarget(target)),
+      );
+      nextWorkspace = await persistWorkspace(db, {
+        ...workspace,
+        openPlatformTargets: nextTargets,
+        activeTabId: removedTabIds.has(workspace.activeTabId) ? 'editor' : workspace.activeTabId,
+      });
+    }
+    await get().loadAccounts();
+    set({ workspace: nextWorkspace });
+  },
+
+  getAccountById: (id) => {
+    if (!id) return null;
+    return get().accounts.find((account) => account.id === id) ?? null;
+  },
+
   openContentItem: async (id) => {
     const { db, contentService, workspace } = get();
     if (!db || !contentService) return;
     const content = await contentService.load(id);
     if (!content) return;
-    workspace.currentContentItemId = content.id;
-    workspace.sidebarSection = 'editor';
-    workspace.activeTabId = 'editor';
-    await db.workspace.saveState(workspace);
-    set({ content, blocks: content.revision.blocks, workspace });
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      currentContentItemId: content.id,
+      sidebarSection: 'editor',
+      activeTabId: 'editor',
+    });
+    set({ content, blocks: content.revision.blocks, workspace: nextWorkspace });
   },
 
   duplicateContentItem: async (id) => {
@@ -233,11 +472,13 @@ export const useAppStore = create<AppState>((set, get) => ({
     const { db, contentService, workspace } = get();
     if (!db || !contentService) return;
     const content = await contentService.createDraft();
-    workspace.currentContentItemId = content.id;
-    workspace.sidebarSection = 'editor';
-    workspace.activeTabId = 'editor';
-    await db.workspace.saveState(workspace);
-    set({ content, blocks: content.revision.blocks, workspace });
+    const nextWorkspace = await persistWorkspace(db, {
+      ...workspace,
+      currentContentItemId: content.id,
+      sidebarSection: 'editor',
+      activeTabId: 'editor',
+    });
+    set({ content, blocks: content.revision.blocks, workspace: nextWorkspace });
     await get().loadLibrary();
   },
 
@@ -268,7 +509,17 @@ export const useAppStore = create<AppState>((set, get) => ({
       currentRevisionId: revisionId,
       metadata: { title: 'Запуск Reizoko' },
       syncState: 'local',
-      revision: { id: revisionId, contentItemId: itemId, createdAt: now, blocks, version: 1 },
+      revision: {
+        id: revisionId,
+        contentItemId: itemId,
+        createdAt: now,
+        updatedAt: now,
+        blocks,
+        metadata: { title: 'Запуск Reizoko' },
+        version: 1,
+        origin: 'auto',
+        kind: 'working',
+      },
     };
 
     const library: ContentItemSummary[] = [
@@ -297,7 +548,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       saveStatus: 'saved',
       workspace: {
         ...DEFAULT_WORKSPACE,
-        openPlatformTabs: ['instagram', 'telegram', 'vk'],
+        openPlatformTargets: demoPlatformTargets(['instagram', 'telegram', 'vk']),
         currentContentItemId: itemId,
       },
     });
@@ -317,12 +568,20 @@ export const useAppStore = create<AppState>((set, get) => ({
       showPlatformPicker: false,
     };
 
+    const openTargets = demoPlatformTargets(['instagram', 'telegram', 'vk']);
+
     if (scene === 'editor-light') {
       applyTheme('light');
       set({ workspace: { ...get().workspace, ...base } });
     } else if (scene === 'editor-dark') {
       applyTheme('dark');
       set({ workspace: { ...get().workspace, ...base } });
+    } else if (scene === 'library-light') {
+      applyTheme('light');
+      set({ workspace: { ...get().workspace, sidebarSection: 'library', activeTabId: 'editor' } });
+    } else if (scene === 'library-dark') {
+      applyTheme('dark');
+      set({ workspace: { ...get().workspace, sidebarSection: 'library', activeTabId: 'editor' } });
     } else if (scene === 'instagram-light') {
       applyTheme('light');
       set({
@@ -330,7 +589,27 @@ export const useAppStore = create<AppState>((set, get) => ({
           ...get().workspace,
           ...base,
           activeTabId: 'platform-instagram',
-          openPlatformTabs: ['instagram', 'telegram', 'vk'],
+          openPlatformTargets: openTargets,
+        },
+      });
+    } else if (scene === 'instagram-dark') {
+      applyTheme('dark');
+      set({
+        workspace: {
+          ...get().workspace,
+          ...base,
+          activeTabId: 'platform-instagram',
+          openPlatformTargets: openTargets,
+        },
+      });
+    } else if (scene === 'telegram-light') {
+      applyTheme('light');
+      set({
+        workspace: {
+          ...get().workspace,
+          ...base,
+          activeTabId: 'platform-telegram',
+          openPlatformTargets: openTargets,
         },
       });
     } else if (scene === 'telegram-dark') {
@@ -340,19 +619,292 @@ export const useAppStore = create<AppState>((set, get) => ({
           ...get().workspace,
           ...base,
           activeTabId: 'platform-telegram',
-          openPlatformTabs: ['instagram', 'telegram', 'vk'],
+          openPlatformTargets: openTargets,
         },
       });
-    } else if (scene === 'library-light') {
+    } else if (scene === 'vk-light') {
       applyTheme('light');
-      set({ workspace: { ...get().workspace, sidebarSection: 'library', activeTabId: 'editor' } });
-    } else if (scene === 'platform-picker') {
+      set({
+        workspace: {
+          ...get().workspace,
+          ...base,
+          activeTabId: 'platform-vk',
+          openPlatformTargets: openTargets,
+        },
+      });
+    } else if (scene === 'vk-dark') {
+      applyTheme('dark');
+      set({
+        workspace: {
+          ...get().workspace,
+          ...base,
+          activeTabId: 'platform-vk',
+          openPlatformTargets: openTargets,
+        },
+      });
+    } else if (scene === 'platform-picker-light') {
       applyTheme('light');
       set({
         workspace: { ...get().workspace, ...base },
         showPlatformPicker: true,
       });
+    } else if (scene === 'platform-picker-dark') {
+      applyTheme('dark');
+      set({
+        workspace: { ...get().workspace, ...base },
+        showPlatformPicker: true,
+      });
+    } else if (scene === 'settings-light') {
+      applyTheme('light');
+      set({ workspace: { ...get().workspace, sidebarSection: 'settings', activeTabId: 'editor' } });
+    } else if (scene === 'settings-dark') {
+      applyTheme('dark');
+      set({ workspace: { ...get().workspace, sidebarSection: 'settings', activeTabId: 'editor' } });
     }
+  },
+
+  openRevisionHistory: async () => {
+    const { content } = get();
+    if (!content) return;
+    set({
+      showRevisionHistory: true,
+      selectedRevisionId: content.currentRevisionId,
+      restoreCandidateId: null,
+    });
+    await get().loadRevisionHistory();
+  },
+
+  closeRevisionHistory: () => {
+    set({
+      showRevisionHistory: false,
+      selectedRevisionId: null,
+      restoreCandidateId: null,
+    });
+  },
+
+  loadRevisionHistory: async () => {
+    const { contentService, content } = get();
+    if (!contentService || !content) return;
+    const groupedHistory = await contentService.getGroupedHistory(content.id, content.currentRevisionId);
+    set({ groupedHistory });
+  },
+
+  selectRevisionPreview: (revisionId) => {
+    set({ selectedRevisionId: revisionId, restoreCandidateId: null });
+  },
+
+  createRevisionCheckpoint: async () => {
+    const { contentService, content } = get();
+    if (!contentService || !content) return;
+    await get().saveContent();
+    const updated = await contentService.createCheckpoint(content.id);
+    set({
+      content: updated,
+      blocks: updated.revision.blocks,
+      selectedRevisionId: updated.currentRevisionId,
+      saveStatus: 'saved',
+    });
+    await get().loadRevisionHistory();
+  },
+
+  requestRestoreRevision: (revisionId) => {
+    set({ restoreCandidateId: revisionId });
+  },
+
+  cancelRestoreRevision: () => {
+    set({ restoreCandidateId: null });
+  },
+
+  confirmRestoreRevision: async () => {
+    const { contentService, content, restoreCandidateId } = get();
+    if (!contentService || !content || !restoreCandidateId) return;
+
+    cancelScheduledSave();
+    await get().saveContent();
+    cancelScheduledSave();
+    const updated = await contentService.restoreRevision(content.id, restoreCandidateId);
+    cancelScheduledSave();
+    set({
+      content: updated,
+      blocks: updated.revision.blocks,
+      selectedRevisionId: updated.currentRevisionId,
+      restoreCandidateId: null,
+      saveStatus: 'saved',
+    });
+    await get().loadRevisionHistory();
+  },
+
+  fetchRevision: async (revisionId) => {
+    const { contentService } = get();
+    if (!contentService) return null;
+    return contentService.getRevision(revisionId);
+  },
+
+  preparePublicationBatch: async () => {
+    const { publicationService, content, workspace, accounts } = get();
+    if (!publicationService || !content) return;
+
+    const openTargets = workspace.openPlatformTargets;
+    if (openTargets.length === 0) {
+      set({ publicationPrepareError: 'Откройте хотя бы одну площадку, чтобы подготовить публикацию.' });
+      return;
+    }
+
+    await get().saveContent();
+
+    try {
+      const result = await publicationService.prepareBatch({
+        contentItemId: content.id,
+        targets: openTargets.map((target) => toPublicationTarget(target)),
+      });
+
+      const confirmationLabels = openTargets.map((target) => {
+        const platformName =
+          platformRegistry.get(target.platformId)?.adapter.name ?? target.platformId;
+        const account = target.socialAccountId
+          ? accounts.find((item) => item.id === target.socialAccountId)
+          : null;
+        return getPlatformTargetLabel(platformName, account);
+      });
+
+      set({
+        content: result.item,
+        blocks: result.item.revision.blocks,
+        publicationPrepareConfirmation: confirmationLabels,
+        publicationPrepareError: null,
+        saveStatus: 'saved',
+      });
+    } catch (error) {
+      set({
+        publicationPrepareError:
+          error instanceof Error ? error.message : 'Не удалось подготовить публикацию',
+      });
+    }
+  },
+
+  dismissPublicationConfirmation: () => {
+    set({ publicationPrepareConfirmation: null, publicationPrepareError: null });
+  },
+
+  getPublicationState: async () => {
+    const { publicationService, content } = get();
+    if (!publicationService || !content) return null;
+    const batches = await publicationService.listBatchesByContentItem(content.id);
+    const publications = await publicationService.listPublicationsByContentItem(content.id);
+    return { batches, publications };
+  },
+
+  createBackup: async () => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+
+    if (isSmokeTestMode()) {
+      const dir = await appDataDir();
+      const path = (await join(dir, 'smoke-backup.reizoko-backup')).replace(/\//g, '\\');
+      const result = await writeBackupToPath(db, path);
+      return { path, warnings: result.warnings };
+    }
+
+    return createUserBackup(db);
+  },
+
+  exportJsonBackup: async () => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    if (isSmokeTestMode()) {
+      const dir = await appDataDir();
+      const path = (await join(dir, 'smoke-export.json')).replace(/\//g, '\\');
+      const service = createBackupService(db);
+      const exported = await service.exportJson();
+      await writeBytesToPath(path, new TextEncoder().encode(exported.json));
+      return path;
+    }
+    return exportUserJson(db);
+  },
+
+  beginRestoreBackup: async () => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+
+    const path = isSmokeTestMode()
+      ? (await join(await appDataDir(), 'smoke-backup.reizoko-backup')).replace(/\//g, '\\')
+      : await pickBackupFile();
+
+    if (!path) return;
+
+    const validation = await validateUserBackup(path);
+    if (!validation.valid || !validation.manifest) {
+      throw new Error(
+        validation.errors[0] ??
+          'Не удалось восстановить резервную копию: файл повреждён или содержит неполные данные.',
+      );
+    }
+
+    const service = createBackupService(db);
+    set({
+      restoreCandidate: {
+        path,
+        summary: service.summarize(validation.manifest),
+      },
+    });
+  },
+
+  confirmRestoreBackup: async () => {
+    const { db, restoreCandidate } = get();
+    if (!db || !restoreCandidate) return;
+
+    if (isSmokeTestMode()) {
+      await restoreBackupFromPath(db, restoreCandidate.path);
+    } else {
+      await restoreUserBackup(db, restoreCandidate.path);
+    }
+
+    set({ restoreCandidate: null });
+    await get().reloadApplicationState();
+  },
+
+  cancelRestoreBackup: () => {
+    set({ restoreCandidate: null });
+  },
+
+  reloadApplicationState: async () => {
+    const { db, contentService, socialAccountService } = get();
+    if (!db || !contentService || !socialAccountService) return;
+
+    const workspace = await db.workspace.getState();
+    const storedTheme = await db.settings.get<ThemeMode>(THEME_SETTINGS_KEY, readStoredThemeMode());
+    persistThemeMode(storedTheme);
+
+    let content: ContentItemWithRevision | null = null;
+    if (workspace.currentContentItemId) {
+      content = await db.content.getItem(workspace.currentContentItemId);
+    }
+    if (!content) {
+      content = await contentService.createDraft();
+      const nextWorkspace = await persistWorkspace(db, {
+        ...workspace,
+        currentContentItemId: content.id,
+      });
+      set({
+        workspace: nextWorkspace,
+        content,
+        blocks: content.revision.blocks,
+        themeMode: storedTheme,
+      });
+    } else {
+      set({
+        workspace,
+        content,
+        blocks: content.revision.blocks,
+        themeMode: storedTheme,
+      });
+    }
+
+    const mediaItems = await db.media.list();
+    const mediaPaths = Object.fromEntries(mediaItems.map((item) => [item.id, item.localPath]));
+    const accounts = await socialAccountService.listAllAccountsIncludingInactive();
+    set({ mediaPaths, accounts });
+    await get().loadLibrary();
   },
 }));
 
@@ -361,4 +913,10 @@ function scheduleSave(get: () => AppState) {
   saveTimer = setTimeout(() => {
     void get().saveContent();
   }, 600);
+}
+
+export function resolveActivePlatformTarget(workspace: WorkspaceState) {
+  const targetId = parsePlatformTabId(workspace.activeTabId);
+  if (!targetId) return null;
+  return workspace.openPlatformTargets.find((target) => target.id === targetId) ?? null;
 }

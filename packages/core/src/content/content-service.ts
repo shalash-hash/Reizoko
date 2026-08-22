@@ -9,18 +9,31 @@ import {
   HeadingBlockData,
   ImageBlockData,
   TextBlockData,
+  PLANNED_BLOCK_TYPES,
   generateId,
   nowIso,
 } from '@reizoko/shared';
+import {
+  filterRevisionsForHistory,
+  groupRevisionsForHistory,
+  type GroupedRevisionHistory,
+} from './revision-policy.js';
 
 export interface ContentRepository {
   createItem(metadata: ContentItemMetadata, blocks: ContentBlock[]): Promise<ContentItemWithRevision>;
   getItem(id: string): Promise<ContentItemWithRevision | null>;
-  updateItem(
+  getRevision(revisionId: string): Promise<ContentRevision | null>;
+  saveWorking(
     id: string,
     metadata: ContentItemMetadata,
     blocks: ContentBlock[],
   ): Promise<ContentItemWithRevision>;
+  createManualCheckpoint(id: string): Promise<ContentItemWithRevision>;
+  createPublicationCheckpoint(id: string): Promise<{
+    checkpoint: ContentRevision;
+    item: ContentItemWithRevision;
+  }>;
+  restoreRevision(itemId: string, revisionId: string): Promise<ContentItemWithRevision>;
   listItems(search?: string): Promise<ContentItemSummary[]>;
   duplicateItem(id: string): Promise<ContentItemWithRevision>;
   deleteItem(id: string): Promise<void>;
@@ -39,11 +52,30 @@ export class ContentService {
     return this.repository.getItem(id);
   }
 
-  async save(
-    item: ContentItem,
-    blocks: ContentBlock[],
-  ): Promise<ContentItemWithRevision> {
-    return this.repository.updateItem(item.id, item.metadata, blocks);
+  async save(item: ContentItem, blocks: ContentBlock[]): Promise<ContentItemWithRevision> {
+    return this.repository.saveWorking(item.id, item.metadata, blocks);
+  }
+
+  async createCheckpoint(itemId: string): Promise<ContentItemWithRevision> {
+    return this.repository.createManualCheckpoint(itemId);
+  }
+
+  async restoreRevision(itemId: string, revisionId: string): Promise<ContentItemWithRevision> {
+    return this.repository.restoreRevision(itemId, revisionId);
+  }
+
+  async getRevisions(itemId: string): Promise<ContentRevision[]> {
+    return this.repository.getRevisions(itemId);
+  }
+
+  async getRevision(revisionId: string): Promise<ContentRevision | null> {
+    return this.repository.getRevision(revisionId);
+  }
+
+  async getGroupedHistory(itemId: string, currentRevisionId: string): Promise<GroupedRevisionHistory[]> {
+    const revisions = await this.repository.getRevisions(itemId);
+    const filtered = filterRevisionsForHistory(revisions, currentRevisionId);
+    return groupRevisionsForHistory(filtered);
   }
 
   async searchLibrary(query?: string): Promise<ContentItemSummary[]> {
@@ -93,8 +125,12 @@ export function createBlock(
           caption: (data as ImageBlockData)?.caption,
         },
       };
-    default:
-      throw new Error(`Block type "${type}" is not implemented yet`);
+    default: {
+      if ((PLANNED_BLOCK_TYPES as readonly string[]).includes(type)) {
+        throw new Error(`Block type "${type}" is planned for a future stage`);
+      }
+      throw new Error(`Unknown block type "${type}"`);
+    }
   }
 }
 
@@ -116,6 +152,21 @@ export function extractPreviewText(blocks: ContentBlock[], maxLength = 120): str
     }
   }
   return '';
+}
+
+/** Returns true when the post has no substantive block content (text, heading, or image). */
+export function isContentEmpty(blocks: ContentBlock[]): boolean {
+  for (const block of blocks) {
+    if (block.type === 'text' || block.type === 'heading') {
+      const text = (block.data as TextBlockData | HeadingBlockData).text.trim();
+      if (text) return false;
+    }
+    if (block.type === 'image') {
+      const mediaId = (block.data as ImageBlockData).mediaId;
+      if (mediaId) return false;
+    }
+  }
+  return true;
 }
 
 export { generateId, nowIso };

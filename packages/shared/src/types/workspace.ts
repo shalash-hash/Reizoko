@@ -11,6 +11,7 @@ export interface PlatformTab {
   type: 'platform';
   id: string;
   platformId: string;
+  socialAccountId?: string | null;
   label: string;
   closable: true;
 }
@@ -26,17 +27,17 @@ export interface NavTab {
 
 export type WorkspaceTab = EditorTab | PlatformTab | NavTab;
 
-export interface WorkspaceState {
-  activeTabId: string;
-  openPlatformTabs: string[];
-  currentContentItemId: string | null;
-  sidebarSection: 'editor' | 'library' | 'calendar' | 'history' | 'accounts' | 'settings';
-}
-
-export interface SocialAccount {
+export interface OpenPlatformTarget {
   id: string;
   platformId: string;
-  displayName: string;
-  connectedAt: string;
-  isActive: boolean;
+  socialAccountId?: string | null;
+}
+
+export interface WorkspaceState {
+  activeTabId: string;
+  openPlatformTargets: OpenPlatformTarget[];
+  /** @deprecated Legacy Stage 1 format — migrated to openPlatformTargets on load */
+  openPlatformTabs?: string[];
+  currentContentItemId: string | null;
+  sidebarSection: 'editor' | 'library' | 'calendar' | 'history' | 'accounts' | 'settings';
 }

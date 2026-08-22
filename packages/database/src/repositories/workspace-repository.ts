@@ -1,5 +1,5 @@
 import { WorkspaceState, nowIso } from '@reizoko/shared';
-import { DEFAULT_WORKSPACE } from '@reizoko/core';
+import { DEFAULT_WORKSPACE, normalizeWorkspaceState } from '@reizoko/core';
 import { DatabaseClient } from '../client/database-client.js';
 
 export class SqliteWorkspaceRepository {
@@ -10,15 +10,17 @@ export class SqliteWorkspaceRepository {
       `SELECT state_json FROM workspace_state WHERE id = 1`,
     );
     if (!result.rows[0]) return { ...DEFAULT_WORKSPACE };
-    return JSON.parse(result.rows[0].state_json) as WorkspaceState;
+    const parsed = JSON.parse(result.rows[0].state_json) as WorkspaceState;
+    return normalizeWorkspaceState(parsed);
   }
 
   async saveState(state: WorkspaceState): Promise<void> {
+    const normalized = normalizeWorkspaceState(state);
     const now = nowIso();
     await this.db.execute(
       `INSERT INTO workspace_state (id, state_json, updated_at) VALUES (1, ?, ?)
        ON CONFLICT(id) DO UPDATE SET state_json = excluded.state_json, updated_at = excluded.updated_at`,
-      [JSON.stringify(state), now],
+      [JSON.stringify(normalized), now],
     );
   }
 }

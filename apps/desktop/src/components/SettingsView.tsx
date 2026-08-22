@@ -1,5 +1,6 @@
 import { Monitor, Moon, Sun, Sparkles } from 'lucide-react';
 import { Badge, useTheme, type ThemeMode } from '@reizoko/ui';
+import { BackupSettingsPanel } from './BackupSettingsPanel';
 import './settings-view.css';
 
 const THEME_OPTIONS: Array<{
@@ -36,7 +37,7 @@ export function SettingsView() {
   const { mode, setMode } = useTheme();
 
   return (
-    <div className="settings-view">
+    <div className="settings-view" data-testid="settings-view">
       <header className="settings-view__hero">
         <Sparkles size={20} strokeWidth={1.75} aria-hidden />
         <div>
@@ -61,6 +62,7 @@ export function SettingsView() {
                 role="radio"
                 aria-checked={selected}
                 className={`theme-card ${selected ? 'theme-card--selected' : ''}`}
+                data-testid={`theme-${option.id}`}
                 onClick={() => setMode(option.id)}
               >
                 <div className={`theme-card__preview ${option.previewClass}`}>
@@ -81,9 +83,11 @@ export function SettingsView() {
         </div>
       </section>
 
+      <BackupSettingsPanel />
+
       <section className="settings-panel settings-panel--about">
         <h2>О приложении</h2>
-        <div className="about-card">
+        <div className="about-card" data-testid="about-card">
           <div className="about-card__logo">R</div>
           <div>
             <strong>Reizoko</strong>

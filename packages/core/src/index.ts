@@ -1,6 +1,18 @@
 export * from './capabilities/index.js';
 export * from './content/content-service.js';
 export type { ContentRepository } from './content/content-service.js';
+export * from './content/revision-policy.js';
 export * from './content/block-factory.js';
+export * from './publication/publication-batch-repository.js';
+export * from './publication/publication-repository.js';
+export * from './publication/publication-service.js';
+export * from './backup/backup-repository.js';
+export * from './backup/backup-service.js';
+export * from './backup/backup-validator.js';
+export * from './backup/backup-archive.js';
+export * from './backup/backup-crypto.js';
+export * from './social-account/social-account-repository.js';
+export * from './social-account/social-account-service.js';
 export * from './workspace/workspace-service.js';
+export * from './workspace/platform-targets.js';
 export { DEFAULT_WORKSPACE } from './workspace/workspace-service.js';

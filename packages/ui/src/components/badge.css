@@ -15,8 +15,8 @@
 }
 
 .badge--planned {
-  background: var(--accent-muted);
-  color: var(--accent);
+  background: var(--badge-planned-bg);
+  color: var(--badge-planned-text);
 }
 
 .badge--success {

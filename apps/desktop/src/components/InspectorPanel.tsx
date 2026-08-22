@@ -59,7 +59,7 @@ export function InspectorPanel({ platformId }: InspectorPanelProps) {
   ];
 
   return (
-    <aside className="inspector-panel" aria-label="Инспектор публикации">
+    <aside className="inspector-panel" data-testid="inspector-panel" aria-label="Инспектор публикации">
       <section className="inspector-panel__section">
         <h3 className="inspector-panel__heading">Платформа</h3>
         <button

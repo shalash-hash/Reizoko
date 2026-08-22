@@ -7,6 +7,7 @@ export interface SidebarItem {
   label: string;
   icon: LucideIcon;
   enabled: boolean;
+  testId?: string;
   plannedMessage?: string;
   plannedStage?: 2 | 3;
 }
@@ -120,6 +121,7 @@ function SidebarButton({
     <button
       type="button"
       className={`sidebar__item ${active ? 'sidebar__item--active' : ''}`}
+      data-testid={item.testId}
       onClick={() => onSelect(item.id)}
       title={collapsed ? item.label : undefined}
     >

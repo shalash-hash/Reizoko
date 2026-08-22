@@ -1,104 +1,381 @@
 .status-bar {
+
+  position: relative;
+
   display: flex;
+
   align-items: center;
+
   justify-content: space-between;
+
   height: var(--status-bar-height);
+
   padding: 0 var(--space-4);
+
   background: var(--bg-status);
+
   border-top: 1px solid var(--border-subtle);
+
   font-size: var(--text-sm);
+
   color: var(--text-secondary);
+
   flex-shrink: 0;
+
 }
+
+
 
 .status-bar__left,
+
 .status-bar__right {
+
   display: flex;
+
   align-items: center;
+
   gap: var(--space-4);
+
 }
+
+
 
 .status-bar__save {
+
   display: inline-flex;
+
   align-items: center;
+
   gap: 6px;
+
   font-weight: 500;
+
   font-size: var(--text-sm);
+
 }
+
+
 
 .status-bar__save--saved {
+
   color: var(--text-secondary);
+
 }
+
+
 
 .status-bar__save--saving {
+
   color: var(--warning);
+
 }
+
+
 
 .status-bar__save--error {
+
   color: var(--danger);
+
 }
+
+
 
 .status-bar__meta,
-.status-bar__autosave {
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
 
 .status-bar__autosave {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+
+  font-size: var(--text-xs);
+
+  color: var(--text-muted);
+
 }
+
+
+
+.status-bar__autosave {
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+}
+
+
 
 .status-bar__icon {
+
   width: 14px;
+
   height: 14px;
+
   color: var(--success);
+
 }
+
+
 
 .status-bar__icon--spin {
+
   animation: spin 1s linear infinite;
+
   color: var(--warning);
+
 }
+
+
 
 @keyframes spin {
+
   to {
+
     transform: rotate(360deg);
+
   }
+
 }
+
+
 
 .status-bar__right {
+
   gap: 0;
+
 }
+
+
+
+.status-bar__publish-group {
+
+  position: relative;
+
+  display: flex;
+
+  align-items: stretch;
+
+}
+
+
 
 .status-bar__publish {
+
   padding: 8px 18px;
+
   border: none;
+
   border-radius: var(--radius-md) 0 0 var(--radius-md);
+
   background: var(--accent);
-  color: white;
+
+  color: var(--text-inverse);
+
   font-size: var(--text-sm);
+
   font-weight: 600;
-  cursor: not-allowed;
-  opacity: 0.55;
+
+  cursor: pointer;
+
 }
+
+
 
 .status-bar__publish-menu {
+
   display: grid;
+
   place-items: center;
+
   width: 36px;
+
   height: 36px;
+
   border: none;
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
+
+  border-left: 1px solid var(--border-on-accent);
+
   border-radius: 0 var(--radius-md) var(--radius-md) 0;
+
   background: var(--accent);
-  color: white;
-  cursor: not-allowed;
-  opacity: 0.55;
+
+  color: var(--text-inverse);
+
+  cursor: pointer;
+
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .status-bar__icon--spin {
-    animation: none;
-  }
+
+
+.status-bar__publish:hover,
+
+.status-bar__publish-menu:hover {
+
+  filter: brightness(1.05);
+
 }
+
+
+
+.status-bar__publish-dropdown {
+
+  position: absolute;
+
+  right: 0;
+
+  bottom: calc(100% + 8px);
+
+  min-width: 240px;
+
+  padding: 6px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--bg-elevated);
+
+  border: 1px solid var(--border-subtle);
+
+  box-shadow: var(--shadow-lg);
+
+  z-index: 20;
+
+}
+
+
+
+.status-bar__publish-item {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  width: 100%;
+
+  padding: 10px 12px;
+
+  border: none;
+
+  border-radius: var(--radius-sm);
+
+  background: transparent;
+
+  color: var(--text-primary);
+
+  font-size: var(--text-sm);
+
+  text-align: left;
+
+  cursor: pointer;
+
+}
+
+
+
+.status-bar__publish-item--active:not(:disabled):hover {
+
+  background: var(--bg-hover);
+
+}
+
+
+
+.status-bar__publish-item:disabled {
+
+  opacity: 0.45;
+
+  cursor: not-allowed;
+
+}
+
+
+
+.status-bar__publish-item--soon {
+
+  color: var(--text-muted);
+
+}
+
+
+
+.status-bar__soon {
+
+  margin-left: 8px;
+
+  font-size: var(--text-xs);
+
+  color: var(--text-muted);
+
+  text-transform: lowercase;
+
+}
+
+
+
+.status-bar__confirmation {
+
+  position: absolute;
+
+  left: 50%;
+
+  bottom: calc(100% + 10px);
+
+  transform: translateX(-50%);
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 2px;
+
+  padding: 10px 14px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--bg-elevated);
+
+  border: 1px solid var(--border-subtle);
+
+  box-shadow: var(--shadow-md);
+
+  color: var(--text-primary);
+
+  font-size: var(--text-sm);
+
+  white-space: nowrap;
+
+  z-index: 15;
+
+}
+
+
+
+.status-bar__confirmation strong {
+
+  font-weight: 600;
+
+}
+
+
+
+.status-bar__confirmation span {
+
+  color: var(--text-secondary);
+
+  font-size: var(--text-xs);
+
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .status-bar__icon--spin {
+
+    animation: none;
+
+  }
+
+}
+
+

@@ -4,6 +4,9 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  background: var(--bg-preview-stage);
+  background-image: var(--workspace-pattern);
+  background-size: 20px 20px;
 }
 
 .platform-preview-panel__stage {

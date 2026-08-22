@@ -60,12 +60,12 @@
 
 .block-item:hover,
 .block-item--focused {
-  background: rgba(0, 0, 0, 0.02);
+  background: var(--bg-block-hover);
 }
 
 [data-theme='dark'] .block-item:hover,
 [data-theme='dark'] .block-item--focused {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--bg-block-hover);
 }
 
 .block-item--dragging {

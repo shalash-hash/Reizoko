@@ -36,6 +36,7 @@ interface BlockEditorProps {
   getMediaUrl: (mediaId: string) => string | null;
   title: string;
   onTitleChange: (title: string) => void;
+  readOnly?: boolean;
 }
 
 export function BlockEditor({
@@ -45,6 +46,7 @@ export function BlockEditor({
   getMediaUrl,
   title,
   onTitleChange,
+  readOnly = false,
 }: BlockEditorProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -98,16 +100,30 @@ export function BlockEditor({
   };
 
   return (
-    <div className="block-editor">
+    <div className={`block-editor ${readOnly ? 'block-editor--readonly' : ''}`}>
       <div className="block-editor__canvas">
         <div className="block-editor__paper">
           <input
             className="block-editor__title"
+            data-testid="editor-title"
             value={title}
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Название поста"
+            readOnly={readOnly}
           />
 
+          {readOnly ? (
+            <div className="block-editor__list">
+              {sortedBlocks.map((block) => (
+                <div key={block.id} className="block-item block-item--readonly">
+                  <div className="block-item__content">
+                    <BlockContent block={block} getMediaUrl={getMediaUrl} readOnly missingImageLabel="Изображение недоступно" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
           <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -141,19 +157,21 @@ export function BlockEditor({
         </DndContext>
 
         <div className="block-editor__add-bar">
-          <Button size="sm" variant="ghost" onClick={() => addBlock('text')}>
+          <Button size="sm" variant="ghost" data-testid="add-text-block" onClick={() => addBlock('text')}>
             <Type size={15} strokeWidth={2} aria-hidden />
             Текст
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => addBlock('heading')}>
+          <Button size="sm" variant="ghost" data-testid="add-heading-block" onClick={() => addBlock('heading')}>
             <Heading1 size={15} strokeWidth={2} aria-hidden />
             Заголовок
           </Button>
-          <Button size="sm" variant="ghost" onClick={() => addBlock('image')}>
+          <Button size="sm" variant="ghost" data-testid="add-image-block" onClick={() => addBlock('image')}>
             <ImagePlus size={15} strokeWidth={2} aria-hidden />
             Изображение
           </Button>
         </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -199,6 +217,7 @@ function SortableBlock({
       <button
         type="button"
         className="block-item__handle"
+        data-testid="block-handle"
         {...attributes}
         {...listeners}
         aria-label="Перетащить блок"
@@ -226,9 +245,10 @@ interface BlockContentProps {
   getMediaUrl: (mediaId: string) => string | null;
   onUpdate?: (data: ContentBlock['data']) => void;
   readOnly?: boolean;
+  missingImageLabel?: string;
 }
 
-function BlockContent({ block, getMediaUrl, onUpdate, readOnly = false }: BlockContentProps) {
+function BlockContent({ block, getMediaUrl, onUpdate, readOnly = false, missingImageLabel = 'Изображение не загружено' }: BlockContentProps) {
   if (block.type === 'text') {
     return (
       <textarea
@@ -264,11 +284,11 @@ function BlockContent({ block, getMediaUrl, onUpdate, readOnly = false }: BlockC
     return (
       <div className="block-item__image">
         {url ? (
-          <img src={url} alt={(block.data as ImageBlockData).alt ?? ''} />
+          <img src={url} alt={(block.data as ImageBlockData).alt ?? ''} data-testid="editor-image" />
         ) : (
           <div className="block-item__image-placeholder">
             <ImagePlus size={24} strokeWidth={1.5} aria-hidden />
-            <span>Изображение не загружено</span>
+            <span>{missingImageLabel}</span>
           </div>
         )}
       </div>

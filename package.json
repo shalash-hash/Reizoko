@@ -15,7 +15,18 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test --if-present"
+    "test": "pnpm -r test --if-present",
+    "test:coverage": "pnpm -r --if-present test:coverage",
+    "quality": "pnpm typecheck && pnpm lint && pnpm test",
+    "quality:release": "pnpm quality && pnpm tauri:build",
+    "smoke": "node scripts/smoke/run-targeted-suite.mjs && node scripts/release-smoke-test.mjs",
+    "stage1:acceptance": "node scripts/stage1-acceptance.mjs",
+    "smoke:release": "node scripts/release-smoke-test.mjs",
+    "smoke:revision": "node scripts/smoke/revision-history.mjs",
+    "smoke:publication": "node scripts/smoke/publication-draft.mjs",
+    "smoke:accounts": "node scripts/smoke/accounts.mjs",
+    "smoke:backup": "node scripts/smoke/backup-restore.mjs",
+    "smoke:clean-start": "node scripts/smoke/clean-start.mjs"
   },
   "devDependencies": {
     "playwright": "^1.51.0",

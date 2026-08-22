@@ -4,4 +4,8 @@ export * from './repositories/content-repository.js';
 export * from './repositories/workspace-repository.js';
 export * from './repositories/settings-repository.js';
 export * from './repositories/media-repository.js';
+export * from './repositories/publication-batch-repository.js';
+export * from './repositories/publication-repository.js';
+export * from './repositories/social-account-repository.js';
+export * from './repositories/backup-repository.impl.js';
 export * from './bootstrap.js';

@@ -1,108 +1,257 @@
 import { useEffect } from 'react';
+
 import type { PlatformAdapter } from '@reizoko/platform-sdk';
+
+import type { OpenPlatformTarget, SocialAccount } from '@reizoko/shared';
+
+import { isTargetOpen } from '@reizoko/core';
+
 import { Badge, Button, IconButton } from '@reizoko/ui';
+
 import { Check, X } from 'lucide-react';
+
 import { PlatformIcon } from './PlatformIcon';
+
 import './platform-picker.css';
 
+
+
 interface PlatformPickerProps {
+
   platforms: PlatformAdapter[];
-  openPlatformIds: string[];
-  onSelect: (platformId: string) => void;
+
+  openTargets: OpenPlatformTarget[];
+
+  accounts: SocialAccount[];
+
+  onSelect: (platformId: string, socialAccountId?: string | null) => void;
+
   onClose: () => void;
+
 }
 
-export function PlatformPicker({ platforms, openPlatformIds, onSelect, onClose }: PlatformPickerProps) {
-  const available = platforms.filter((p) => p.available);
-  const planned = platforms.filter((p) => !p.available);
+
+
+export function PlatformPicker({
+
+  platforms,
+
+  openTargets,
+
+  accounts,
+
+  onSelect,
+
+  onClose,
+
+}: PlatformPickerProps) {
 
   useEffect(() => {
+
     const onKeyDown = (event: KeyboardEvent) => {
+
       if (event.key === 'Escape') onClose();
+
     };
+
     window.addEventListener('keydown', onKeyDown);
+
     return () => window.removeEventListener('keydown', onKeyDown);
+
   }, [onClose]);
 
+
+
+  const selectableAccounts = accounts.filter((account) => account.isActive && !account.deletedAt);
+
+
+
   return (
+
     <div className="platform-picker-overlay" onClick={onClose} role="presentation">
+
       <div
+
         className="platform-picker"
+
+        data-testid="platform-picker"
+
         onClick={(e) => e.stopPropagation()}
+
         role="dialog"
+
         aria-modal="true"
-        aria-label="Выбор площадки"
+
+        aria-label="Добавить площадку"
+
       >
+
         <header className="platform-picker__header">
+
           <div className="platform-picker__header-text">
+
             <h3>Добавить площадку</h3>
-            <p>Выберите preview — контент обновится в реальном времени</p>
+
+            <p>Выберите preview или конкретный локальный профиль</p>
+
           </div>
-          <IconButton label="Закрыть" size="sm" onClick={onClose}>
+
+          <IconButton label="Закрыть" size="sm" data-testid="platform-picker-close" onClick={onClose}>
+
             <X size={18} strokeWidth={2} aria-hidden />
+
           </IconButton>
+
         </header>
 
-        {available.length > 0 && (
-          <section className="platform-picker__section">
-            <h4>Доступно</h4>
-            <div className="platform-picker__grid">
-              {available.map((platform) => {
-                const isOpen = openPlatformIds.includes(platform.id);
-                return (
-                  <button
-                    key={platform.id}
-                    type="button"
-                    className={`platform-picker__card platform-picker__card--available ${
-                      isOpen ? 'platform-picker__card--open' : ''
-                    }`}
-                    onClick={() => onSelect(platform.id)}
-                  >
-                    <PlatformIcon platformId={platform.id} size={32} />
-                    <span className="platform-picker__name">{platform.name}</span>
-                    {isOpen ? (
-                      <span className="platform-picker__status platform-picker__status--open">
-                        <Check size={12} strokeWidth={2.5} aria-hidden />
-                        Подключено
-                      </span>
-                    ) : (
-                      <span className="platform-picker__status">Открыть preview</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
-        )}
 
-        {planned.length > 0 && (
-          <section className="platform-picker__section">
-            <h4>Скоро</h4>
-            <div className="platform-picker__grid">
-              {planned.map((platform) => (
-                <div
-                  key={platform.id}
-                  className="platform-picker__card platform-picker__card--planned"
-                  title={platform.plannedMessage}
-                >
-                  <PlatformIcon platformId={platform.id} size={32} muted />
-                  <span className="platform-picker__name">{platform.name}</span>
-                  <Badge variant="planned">скоро</Badge>
+
+        <div className="platform-picker__groups">
+
+          {platforms.map((platform) => {
+
+            const platformAccounts = selectableAccounts.filter(
+
+              (account) => account.platformId === platform.id,
+
+            );
+
+            const generalOpen = isTargetOpen(openTargets, platform.id, null);
+
+
+
+            return (
+
+              <section key={platform.id} className="platform-picker__group">
+
+                <div className="platform-picker__group-title">
+
+                  <PlatformIcon platformId={platform.id} size={20} muted={!platform.available} />
+
+                  <span>{platform.name}</span>
+
+                  {!platform.available ? <Badge variant="planned">preview скоро</Badge> : null}
+
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
+
+
+
+                <div className="platform-picker__options">
+
+                  <button
+
+                    type="button"
+
+                    className={`platform-picker__option ${generalOpen ? 'platform-picker__option--open' : ''}`}
+
+                    data-testid={`platform-picker-general-${platform.id}`}
+
+                    onClick={() => onSelect(platform.id, null)}
+
+                  >
+
+                    <span>Общий preview</span>
+
+                    {generalOpen ? (
+
+                      <span className="platform-picker__option-status">
+
+                        <Check size={12} strokeWidth={2.5} aria-hidden />
+
+                        Открыто
+
+                      </span>
+
+                    ) : null}
+
+                  </button>
+
+
+
+                  {platformAccounts.map((account) => {
+
+                    const open = isTargetOpen(openTargets, platform.id, account.id);
+
+                    return (
+
+                      <button
+
+                        key={account.id}
+
+                        type="button"
+
+                        className={`platform-picker__option ${open ? 'platform-picker__option--open' : ''}`}
+
+                        data-testid={`platform-picker-account-${account.id}`}
+
+                        onClick={() => onSelect(platform.id, account.id)}
+
+                      >
+
+                        <span>
+
+                          {account.displayName}
+
+                          {account.handle ? (
+
+                            <small className="platform-picker__option-handle">{account.handle}</small>
+
+                          ) : null}
+
+                        </span>
+
+                        {open ? (
+
+                          <span className="platform-picker__option-status">
+
+                            <Check size={12} strokeWidth={2.5} aria-hidden />
+
+                            Открыто
+
+                          </span>
+
+                        ) : null}
+
+                      </button>
+
+                    );
+
+                  })}
+
+                </div>
+
+              </section>
+
+            );
+
+          })}
+
+        </div>
+
+
 
         <footer className="platform-picker__footer">
+
           <Button variant="ghost" onClick={onClose}>
+
             Отмена
+
           </Button>
-          <Button variant="primary" onClick={onClose}>
+
+          <Button variant="primary" data-testid="platform-picker-done" onClick={onClose}>
+
             Готово
+
           </Button>
+
         </footer>
+
       </div>
+
     </div>
+
   );
+
 }
+
+

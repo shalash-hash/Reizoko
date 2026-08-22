@@ -36,10 +36,17 @@ export interface PlatformAdapter {
   validate(blocks: ContentBlock[]): PlatformValidationIssue[];
 }
 
+export interface PlatformPreviewAccountContext {
+  displayName: string;
+  handle?: string | null;
+  avatarMediaId?: string | null;
+}
+
 export interface PlatformPreviewProps {
   blocks: ContentBlock[];
   transformed: TransformedContent;
   issues: PlatformValidationIssue[];
+  socialAccount?: PlatformPreviewAccountContext | null;
   getMediaUrl: (mediaId: string) => string | null;
 }
 

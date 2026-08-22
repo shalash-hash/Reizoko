@@ -52,7 +52,7 @@
   place-items: center;
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, var(--accent), var(--accent-hover));
-  color: white;
+  color: var(--text-inverse);
   font-size: 12px;
   font-weight: 800;
 }

@@ -54,7 +54,8 @@
 
 .library-view__layout-btn--active {
   background: var(--bg-surface);
-  color: var(--accent);
+  color: var(--text-sidebar-active);
+  border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-xs);
 }
 

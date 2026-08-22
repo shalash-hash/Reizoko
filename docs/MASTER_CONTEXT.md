@@ -55,7 +55,17 @@ ContentItem ≠ Publication
 - **ContentItem** — мастер-пост в библиотеке Reizoko.
 - **Publication** — конкретная попытка/факт публикации конкретной revision на конкретной площадке/аккаунте.
 
-Один ContentItem → много Publications.
+Один ContentItem → много Publications через **PublicationBatch** (одна команда пользователя может подготовить несколько площадок одновременно).
+
+```text
+ContentItem
+    ↓
+ContentRevision checkpoint (origin=publication, immutable)
+    ↓
+PublicationBatch
+    ↓
+Publication[]  (по одной на platformId + socialAccountId)
+```
 
 ---
 
@@ -228,36 +238,117 @@ D:\_APP\Reizoko\
 |------|------------|
 | `id` | UUID |
 | `contentItemId` | FK → ContentItem |
-| `createdAt` | Время создания revision |
+| `createdAt`, `updatedAt` | Timestamps (updatedAt — для working revision) |
+| `metadata` | Snapshot title/tags/notes на момент revision |
 | `blocks` | ContentBlock[] |
-| `version` | Инкремент при каждом save |
+| `version` | Монотонный номер версии (не откатывается при restore) |
+| `origin` | `auto` \| `manual` \| `restore` \| `publication` \| `legacy` |
+| `kind` | `working` (текущая, может обновляться) \| `checkpoint` (immutable snapshot) |
+| `restoreFromVersion?` | Для origin=restore — номер восстановленной версии |
 
-**Поведение:** каждое сохранение создаёт **новую revision** (append-only history). UI для просмотра истории **ещё не реализован**.
+**Revision policy (с 1.11):**
+
+- **Working revision** — текущее состояние; обновляется in-place при autosave (debounce ~600ms).
+- **Historical checkpoint** — immutable snapshot; создаётся при:
+  - паузе редактирования **≥ 5 минут** между сохранениями;
+  - ручном «Создать версию»;
+  - перед restore (snapshot текущего состояния).
+- **Restore** — создаёт **новую** working revision из snapshot выбранной версии; история не откатывается.
+- **Legacy revisions** (до migration v2): origin=`legacy`, title backfill из текущего `ContentItem.metadata`; в UI агрегируются по 5‑минутным интервалам.
+
+> Revisions, созданные до migration v2, получают текущий title при backfill, потому что исторический title ранее не сохранялся.
+
+**UI:** Revision History Drawer (кнопка в TabBar) — список, preview, restore, manual checkpoint.
 
 ### ContentItemSummary
 
 Облегчённая проекция для Library: `id`, `title`, `previewText`, `createdAt`, `updatedAt`.
+
+### PublicationBatch
+
+| Поле | Назначение |
+|------|------------|
+| `id` | UUID |
+| `contentItemId` | К какому ContentItem относится batch |
+| `contentRevisionId` | **Immutable publication checkpoint** (не working revision) |
+| `createdAt`, `updatedAt` | Timestamps |
+
+Одна команда «Подготовить публикацию» создаёт **один** PublicationBatch и **N** Publications (по числу открытых platform tabs / targets).
+
+Повторная подготовка того же ContentItem создаёт **новый** batch; старые batches не изменяются.
 
 ### Publication
 
 | Поле | Назначение |
 |------|------------|
 | `id` | UUID |
-| `contentRevisionId` | Какая revision публикуется |
-| `socialAccountId?` | Аккаунт (Stage 3) |
+| `batchId` | Связь с PublicationBatch |
+| `contentRevisionId` | Immutable publication checkpoint (та же revision, что у batch) |
+| `socialAccountId?` | Аккаунт (`null` на Stage 1; архитектура поддерживает несколько аккаунтов одной платформы) |
 | `platformId` | Целевая площадка |
 | `status` | draft / scheduled / publishing / published / failed / cancelled |
-| `scheduledAt?`, `publishedAt?`, `remotePostId?` | Scheduling & result |
+| `preparedSnapshot` | Immutable snapshot подготовленного platform content |
+| `scheduledAt?`, `publishedAt?`, `remotePostId?` | Scheduling & result (Stage 3) |
+| `createdAt`, `updatedAt` | Timestamps |
 
-**Статус:** таблица в SQLite **существует**, TypeScript-тип **определён**, repository/UI **не реализованы**.
+**Уникальный target:** `platformId + socialAccountId`, не просто `platformId`.
 
-### SocialAccount
+**Publication checkpoint (перед batch):**
+
+1. Текущее состояние сохраняется;
+2. Working revision → immutable checkpoint (`origin = publication`, `kind = checkpoint`);
+3. Создаётся новая working revision для дальнейшего редактирования;
+4. PublicationBatch ссылается на checkpoint.
+
+После Prepare пользователь может продолжить редактировать Master Post — prepared Publications **не меняются**.
+
+### PreparedPublicationSnapshot
+
+Platform-neutral prepared snapshot Reizoko (не Meta/TG/VK API payload):
 
 | Поле | Назначение |
 |------|------------|
-| `id`, `platformId`, `displayName`, `connectedAt`, `isActive` | Локальная модель аккаунта |
+| `formatVersion` | `1` |
+| `platformId` | Площадка |
+| `transformedContent` | Результат `PlatformAdapter.transform()` на момент подготовки |
+| `validationIssues` | Результат `validate()` — errors/warnings **per target**, не блокируют весь batch |
+| `preparedAt` | ISO timestamp |
 
-**Статус:** таблица в SQLite **существует**, UI/repository **не реализованы**.
+Media в snapshot — через стабильные `mediaId`, не blob/UI URLs.
+
+Stage 3 Publisher позже преобразует snapshot в конкретный API request.
+
+**Статус Stage 1.12:** migration v3, repositories, `PublicationService.prepareBatch()`, UI «Подготовить публикацию», tests + smoke. Реальные API/OAuth/scheduler **не подключены**.
+
+### SocialAccount
+
+Локальный профиль цели публикации (не OAuth-подключение на Stage 1).
+
+| Поле | Назначение |
+|------|------------|
+| `id`, `platformId`, `displayName` | Идентификация профиля |
+| `handle?` | `@username` для UI |
+| `externalAccountId?` | Будущее сопоставление с OAuth (Stage 3), сейчас обычно `null` |
+| `avatarMediaId?` | Опциональный avatar через MediaItem |
+| `isActive` | Активен ли профиль как новая target |
+| `connectionState` | `local` \| `connected` \| `needs_reconnect` — на Stage 1 только `local` |
+| `createdAt`, `updatedAt`, `deletedAt?` | Timestamps + soft delete |
+
+**Security Stage 1:** только публичные/локальные metadata. **Никаких** access token, refresh token, password, cookies, API secret.
+
+**UX:** локальный профиль показывается как «Локальный профиль», не «Подключён».
+
+**Статус Stage 1.13:** migration v4, repository, service, AccountsView, account-aware tabs/picker/previews, publication targets с `socialAccountId`.
+
+```text
+Platform
+   ↓
+SocialAccount[]
+   ↓
+PublicationTarget (platformId + socialAccountId)
+   ↓
+Publication
+```
 
 ### MediaItem
 
@@ -271,10 +362,19 @@ D:\_APP\Reizoko\
 
 | Поле | Назначение |
 |------|------------|
-| `activeTabId` | `'editor'` или `'platform-{id}'` |
-| `openPlatformTabs` | string[] — открытые platform IDs |
+| `activeTabId` | `'editor'` или `'platform-{targetId}'` |
+| `openPlatformTargets` | `OpenPlatformTarget[]` — открытые publication targets |
+| `openPlatformTabs?` | **Legacy** string[] — мигрируется в `openPlatformTargets` (`socialAccountId = null`) |
 | `currentContentItemId` | UUID текущего draft в редакторе |
-| `sidebarSection` | editor / library / calendar / history / accounts / settings |
+| `sidebarSection` | editor / library / accounts / calendar / history / settings |
+
+`OpenPlatformTarget`:
+
+```ts
+{ id, platformId, socialAccountId?: string | null }
+```
+
+Platform-only tab (без аккаунта) остаётся допустимым: `socialAccountId = null`.
 
 ### Settings
 
@@ -294,8 +394,9 @@ Key-value в таблице `app_settings`. Используется ключ `a
 
 ### Где создаётся база
 
-- Конфиг: `apps/desktop/src-tauri/tauri.conf.json` → `"preload": ["sqlite:reizoko.db"]`
-- Подключение: `TauriDatabaseClient.connect('sqlite:reizoko.db')` в `apps/desktop/src/db/tauri-database-client.ts`
+- Конфиг: `apps/desktop/src-tauri/tauri.conf.json` → `"preload": ["sqlite:reizoko.db", "sqlite:reizoko-smoke.db"]`
+- Подключение: `TauriDatabaseClient.connect(getDatabasePath())` — production `reizoko.db`, smoke `reizoko-smoke.db` при `REIZOKO_SMOKE_TEST=1`
+- **Automated test launch:** при `REIZOKO_SMOKE_TEST=1` окно создаётся скрытым (`visible: false`, `focused: false`, `skip_taskbar: true`) в `apps/desktop/src-tauri/src/lib.rs`. Все smoke runners используют `launchReizokoForSmoke()` из `scripts/smoke/lib.mjs`. Обычный запуск EXE без env var не меняется.
 - Физический путь: **App Data directory Tauri** (управляется `tauri-plugin-sql`)
 
 ### Медиафайлы
@@ -339,6 +440,76 @@ Tauri-реализация: `apps/desktop/src/db/tauri-database-client.ts` (об
 - `social_accounts`
 
 Migrations запускаются **на каждом старте** приложения.
+
+---
+
+## Backup & Restore Architecture
+
+Portable domain backup — **не** копия `reizoko.db`. Формат versioned, независим от SQLite migration version.
+
+### Файл архива
+
+Расширение `.reizoko-backup` (ZIP-compatible container):
+
+```text
+reizoko-backup-YYYY-MM-DD-HHmmss.reizoko-backup
+├── manifest.json
+├── data.json
+└── media/
+    └── {mediaId}-{filename}
+```
+
+### manifest.json
+
+- `format`: `reizoko-backup`
+- `formatVersion`: `1` (backup format, ≠ `databaseSchemaVersion`)
+- `databaseSchemaVersion`: текущая migration version (сейчас v4)
+- `counts`, `mediaFiles[]` с `sha256`, `size`, `archivePath`
+- `warnings[]` — например missing media
+
+### data.json
+
+Domain snapshot (не SQL dump):
+
+- `contentItems`, `contentRevisions`, `mediaItems`
+- `socialAccounts`, `publicationBatches`, `publications`
+- `appSettings`, `workspaceState`
+
+UUID сохраняются без изменения. Smoke paths (`reizoko-smoke.db`, `media-smoke/`) **исключаются**.
+
+### Сервисный слой
+
+| Слой | Путь |
+|------|------|
+| Types | `packages/shared/src/types/backup.ts` |
+| BackupService | `packages/core/src/backup/backup-service.ts` |
+| Validation | `packages/core/src/backup/backup-validator.ts` |
+| Archive (ZIP) | `packages/core/src/backup/backup-archive.ts` |
+| SHA-256 | `packages/core/src/backup/backup-crypto.ts` |
+| Snapshot repo | `packages/database/src/repositories/backup-repository.impl.ts` |
+| Desktop bridge | `apps/desktop/src/services/backup-runtime.ts` |
+| Settings UI | `apps/desktop/src/components/BackupSettingsPanel.tsx` |
+
+### Правила restore
+
+1. **Validate first** — format, references, media checksums; corrupted backup блокирует restore.
+2. **Safety backup** — перед destructive restore автоматически `pre-restore-backup-*.reizoko-backup`; если не удалось — restore не начинается.
+3. **Atomic DB restore** — transaction delete+insert; media через staging directory.
+4. **Preserve UUID** — все entity IDs восстанавливаются как в backup.
+5. **Full replace** — backup становится текущим состоянием (merge не реализован).
+
+### JSON export
+
+`reizoko-export-YYYY-MM-DD.json` — domain data без бинарных media files. Для диагностики/архива, **не** полная замена backup.
+
+### Quality commands
+
+```text
+pnpm quality          # typecheck + lint + test
+pnpm quality:release  # quality + tauri:build
+pnpm test:coverage    # vitest coverage (core + database)
+pnpm smoke:backup     # targeted backup/restore smoke
+```
 
 ---
 
@@ -441,7 +612,7 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | `PlatformPicker` | Modal overlay для добавления preview |
 | `LibraryView` | Content library |
 | `SettingsView` | Theme selection + About |
-| `AppHeader` | **Legacy — не используется в AppShell** |
+| `AppHeader` | **Removed** (legacy, unused) |
 
 ### Approved design concept
 
@@ -480,10 +651,10 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | Состояние | Сохраняется |
 |-----------|-------------|
 | Active tab | ✅ `activeTabId` |
-| Open platform tabs | ✅ `openPlatformTabs[]` |
+| Open platform tabs | ✅ `openPlatformTargets[]` (+ legacy migration) |
 | Current content item | ✅ `currentContentItemId` |
 | Sidebar section | ✅ `sidebarSection` |
-| Blocks / title | ✅ через ContentItem revisions (autosave ~800ms debounce) |
+| Blocks / title | ✅ через ContentItem revisions (autosave ~600ms debounce, working revision coalescing) |
 | Theme | ✅ `app_settings` + localStorage |
 | Media paths | ✅ `media_items` table (reloaded on init) |
 | Library query | ❌ не персистится (сбрасывается) |
@@ -534,8 +705,8 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 
 | Путь | Статус |
 |------|--------|
-| `docs/screenshots/` | **Не создан** (script `scripts/capture-screenshots.mjs` готов) |
-| `docs/superdesign-approved/` | **Не сохранён в репозитории** |
+| `docs/screenshots/` | **14 screenshots** (light + dark for all main screens) |
+| `docs/superdesign-approved/` | Reference PNGs committed |
 
 ---
 
@@ -549,7 +720,7 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | SQLite + migrations | DONE | v1 schema |
 | Repository layer | DONE | Content, Workspace, Settings, Media |
 | UUID IDs | DONE | All entities |
-| ContentItem + ContentRevision | DONE | Append-only revisions on save |
+| ContentItem + ContentRevision | DONE | Working revision + checkpoint policy |
 | Block editor (text, heading, image) | DONE | dnd-kit reorder |
 | Autosave | DONE | Debounced ~800ms |
 | Workspace persistence | DONE | Tabs, draft, sidebar |
@@ -567,36 +738,50 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | Capability system | DONE | Stage 1 all false |
 | Planned feature UI | DONE | Sidebar «скоро» sections |
 | Approved editor shell design | DONE | Primary reference layout |
-| Library/Settings design polish | IN PROGRESS | Simpler than editor shell |
-| Dark theme consistency (all screens) | IN PROGRESS | Editor OK; secondary screens need pass |
-| Revision history UI | PLANNED STAGE 1 | Data layer exists |
-| Publication repository/UI | PLANNED STAGE 1 | Schema only |
-| Social accounts UI | PLANNED STAGE 1 | Schema only |
-| Publish button | PLANNED STAGE 3 | Disabled in StatusBar |
+| Library/Settings design polish | DONE | Light + Dark consistent |
+| Dark theme consistency (all screens) | DONE | Semantic tokens throughout |
+| Revision history UI | DONE | Drawer: list, preview, restore, manual checkpoint |
+| Publication local architecture | DONE | Migration v3, batch, snapshots, prepare UI |
+| Social accounts UI | ✅ DONE | AccountsView + local profiles (Stage 1.13) |
+| Publish now / Schedule | PLANNED STAGE 3 | Disabled «скоро» in dropdown |
 | Calendar / History / Analytics | PLANNED STAGE 2/3 | PlannedFeature placeholders |
 | Cloud sync | PLANNED STAGE 2 | |
 | Web client | PLANNED STAGE 2 | |
 | Server scheduler | PLANNED STAGE 3 | Natural/Exact time modeled |
 | OAuth + API publishing | PLANNED STAGE 3 | |
-| Automated tests | PLANNED STAGE 1 | No test files |
-| Backup/export | PLANNED STAGE 1 | Not implemented |
-| Production EXE build | NEXT | No build artifacts in repo |
-| docs/screenshots | NEXT | Script exists, output missing |
+| Automated tests | ✅ DONE | 67 vitest + smoke suite + `pnpm stage1:acceptance` (Stage 1.14–1.21) |
+| Backup/export | ✅ DONE | `.reizoko-backup` + JSON export + restore (Stage 1.14) |
+| Production EXE build | DONE | Windows release build verified |
+| docs/screenshots | DONE | 14 PNG files |
 
 ---
 
 ## 17. CURRENT POSITION
 
 ```text
-Stage:        1 — Local Desktop
-Substage:     1.19 — UI/UX polish & Light/Dark consistency
-Current task: Приведение Library, Settings и вторичных экранов
-              к approved design direction; dark theme pass
-Next task:    Production desktop build (tauri:build), install verification,
-              screenshot capture, Stage 1 stabilization
+Stage 1 — Local Desktop ✅ COMPLETE
+
+Current product state:
+Production-ready Stage 1 local desktop baseline.
+
+Next architectural stage:
+Stage 2 — Web + Shared Hosting + Sync (planning NOT STARTED)
 ```
 
-**Честная оценка:** Core Stage 1 workflow **работает** (editor → live previews → library → persistence). Остаётся **UI consistency**, **отсутствие tests/build artifacts**, и **schema-only** features (publications, accounts, revision UI).
+**Baseline version:** 0.1.0  
+**Acceptance record:** [STAGE1_ACCEPTANCE.md](./STAGE1_ACCEPTANCE.md)
+
+**Статус 1.21:** Stage 1 Completion Gate закрыт — `pnpm stage1:acceptance`, chained smoke orchestrator, artifact verification.
+
+**Статус 1.15:** Cleanup & Technical Debt закрыт — media file size, smoke lifecycle/isolation, migration tests, planned block types documented, README/gitignore/docs audit, background test mode.
+
+**Статус 1.14:** Quality & Tooling закрыта — `pnpm quality`, coverage, portable backup/restore (`.reizoko-backup`), JSON export, Settings UI «Данные и резервные копии», backup tests + smoke suite PASS.
+
+**Статус 1.13:** Local Accounts Architecture закрыта — migration v4, SocialAccount repository/service, AccountsView, account-aware tabs/picker/previews, publication integration, 12 automated tests + targeted smoke PASS.
+
+**Статус 1.12:** Publication architecture закрыта — migration v3, PublicationBatch/Publication repositories, `PublicationService`, publication checkpoint (`origin=publication`), PreparedPublicationSnapshot, UI «Подготовить публикацию», 10 automated tests + targeted smoke PASS.
+
+**Статус 1.11:** Revision History закрыт — migration v2, revision policy, UI drawer, restore создаёт новую revision, 10 automated tests + targeted smoke test PASS.
 
 ---
 
@@ -604,23 +789,24 @@ Next task:    Production desktop build (tauri:build), install verification,
 
 | Категория | Описание |
 |-----------|----------|
-| Legacy component | `AppHeader.tsx` — не используется, можно удалить |
-| Dead UI control | TabBar menu button (`tab-bar__menu`) — без handler |
-| Publish UI | Кнопка «Опубликовать» disabled — корректно для Stage 1, но без local draft flow |
-| Publication layer | Таблица есть, repository/UI нет |
-| Revision history | Сохраняется в DB, UI просмотра/restore нет |
-| Social accounts | Таблица есть, UI нет |
-| Tests | **0 test files** в репозитории |
-| Screenshots docs | `docs/screenshots/` пуст |
-| SuperDesign PNG refs | Не закоммичены в repo |
-| Git | **Zero commits** — весь проект untracked |
-| README commands | Устарели (`--filter` в tauri:dev не нужен при root script) |
-| Block types | 6 planned types throw on create |
-| Media size | `size: 0` при import (не вычисляется) |
-| Search | LIKE по JSON — работает, но не full-text |
-| Windows PowerShell | `pnpm.ps1` blocked — использовать `pnpm.cmd` или `dev.bat` |
-| Cursor IDE | Auto-opens localhost:1420 tab — mitigated via vite `open: false` + Cursor settings |
-| TODO/FIXME | **Не найдено** в коде (grep по ts/tsx/rs) |
+| Publish UI | «Подготовить публикацию» в dropdown; «Опубликовать сейчас» / «Запланировать» disabled «скоро» |
+| Publication layer | ✅ DONE | Batch + snapshot architecture (Stage 1.12) |
+| Revision history | ✅ DONE | Drawer UI + restore + manual checkpoint |
+| Social accounts | ✅ DONE | Local profiles, no OAuth/secrets (Stage 1.13) |
+| Tests | ✅ DONE | 67 vitest + smoke suite + `pnpm stage1:acceptance` |
+| Backup/restore | ✅ DONE | Portable `.reizoko-backup`, validate-first restore (Stage 1.14) |
+| Background test mode | ✅ DONE | Smoke/E2E launch hidden, isolated DB (Stage 1.15) |
+| Release smoke test | ✅ DONE | `scripts/release-smoke-test.mjs` — phases A–G; chained via `run-targeted-suite.mjs` |
+| Stage 1 acceptance | ✅ DONE | `pnpm stage1:acceptance` + installer manual PASS (2026-08-22) |
+| SuperDesign PNG refs | В `docs/superdesign-approved/` |
+| Git | Repository ready for commit; push only on user command |
+| README commands | ✅ DONE | Актуализирован |
+| Block types | 6 planned types explicitly unsupported (`planned for a future stage`) |
+| Media size | ✅ DONE | Actual file size stored on import (Stage 1.15) |
+| Search | LIKE по JSON — работает, но не full-text (Stage 2) |
+| Windows PowerShell | `pnpm.ps1` blocked — использовать `pnpm.cmd` или `dev.bat` (Stage 1 non-blocking) |
+| Cursor IDE | Auto-opens localhost:1420 tab — mitigated via vite `open: false` (Stage 1 non-blocking) |
+| TODO/FIXME | **Не найдено** в source (ts/tsx/rs) |
 
 ---
 
@@ -629,8 +815,8 @@ Next task:    Production desktop build (tauri:build), install verification,
 | Параметр | Значение |
 |----------|----------|
 | Branch | `master` |
-| Commits | **0** (репозиторий инициализирован, но пуст) |
-| Remote | **Не настроен** |
+| Commits | Initial commit `0d7125b` + local changes (uncommitted) |
+| Remote | `https://github.com/shalash-hash/Reizoko.git` |
 | Uncommitted | **Весь проект** — 15 untracked top-level paths |
 | Staged changes | Нет |
 | Diff | N/A (нет baseline commit) |
@@ -662,7 +848,17 @@ pnpm tauri:build
 | `pnpm build:desktop` | Desktop frontend build |
 | `pnpm lint:fix` | ESLint autofix |
 | `pnpm format` / `format:check` | Prettier |
-| `pnpm test` | Runs tests if present (currently none) |
+| `pnpm test` | Vitest (core + database + desktop) |
+| `pnpm test:coverage` | Coverage report (core + database) |
+| `pnpm quality` | typecheck + lint + test |
+| `pnpm quality:release` | quality + `tauri:build` |
+| `pnpm smoke` | Full smoke regression suite |
+| `pnpm smoke:backup` | Backup/restore targeted smoke |
+| `pnpm smoke:accounts` | Accounts targeted smoke |
+| `pnpm smoke:publication` | Publication draft smoke |
+| `pnpm smoke:revision` | Revision history smoke |
+| `pnpm smoke:release` | Release phases A–G |
+| `pnpm smoke:clean-start` | Fresh DB end-to-end smoke |
 | `dev.bat` | `cd` to repo + `pnpm.cmd tauri:dev` + `BROWSER=none` |
 | `pnpm --filter @reizoko/desktop screenshots` | Playwright screenshots (needs build) |
 
@@ -672,17 +868,23 @@ pnpm tauri:build
 
 ## 21. Build Artifacts
 
-**На момент аудита артефакты отсутствуют** (`apps/desktop/src-tauri/target/release/` не создан).
+**На момент последней сборки (21.08.2026, 15:27 UTC+6) артефакты существуют:**
 
-После `pnpm tauri:build` ожидаемые пути (Tauri 2, Windows):
+| Artifact | Size | Timestamp |
+|----------|------|-----------|
+| `apps/desktop/src-tauri/target/release/reizoko-desktop.exe` | 4 941 152 B | 2026-08-21 15:27:08 |
+| `.../bundle/msi/Reizoko_0.1.0_x64_en-US.msi` | 2 633 728 B | 2026-08-21 15:27:00 |
+| `.../bundle/nsis/Reizoko_0.1.0_x64-setup.exe` | 1 960 686 B | 2026-08-21 15:27:08 |
 
 ```text
-apps/desktop/src-tauri/target/release/reizoko-desktop.exe
-apps/desktop/src-tauri/target/release/bundle/msi/Reizoko_0.1.0_*.msi
-apps/desktop/src-tauri/target/release/bundle/nsis/Reizoko_0.1.0_*.exe
+D:\_APP\Reizoko\apps\desktop\src-tauri\target\release\reizoko-desktop.exe
+D:\_APP\Reizoko\apps\desktop\src-tauri\target\release\bundle\msi\Reizoko_0.1.0_x64_en-US.msi
+D:\_APP\Reizoko\apps\desktop\src-tauri\target\release\bundle\nsis\Reizoko_0.1.0_x64-setup.exe
 ```
 
 Frontend dist: `apps/desktop/dist/`
+
+> Build artifacts не коммитятся (`.gitignore` → `target/`).
 
 ---
 
@@ -700,6 +902,7 @@ Frontend dist: `apps/desktop/dist/`
 10. **Перед крупной архитектурной переделкой** — объяснить необходимость.
 11. **Light и Dark Theme обязательны** для всех новых UI.
 12. **Новые screens** — соответствуют approved Reizoko design (`.superdesign/approved-design-system.md`).
+13. **Background automated testing** — любые автоматические тесты, запускающие desktop Reizoko (smoke, E2E, integration), должны стартовать приложение в фоне (`REIZOKO_SMOKE_TEST=1` → hidden/minimized window, без перехвата focus). Обычный пользовательский запуск EXE не затрагивается.
 
 ---
 
@@ -723,7 +926,12 @@ Frontend dist: `apps/desktop/dist/`
 
 См. [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md):
 
-- **🟡 IN PROGRESS:** 1.19 UI/UX polish & Light/Dark consistency
-- **➡️ NEXT:** 1.20 Production desktop build & Stage 1 stabilization
+- **🟡 IN PROGRESS:** *(none — Stage 1 complete)*
+- **✅ COMPLETE:** Stage 1 — Local Desktop (baseline 0.1.0)
+- **➡️ NEXT:** Stage 2 planning (not started)
 
-После stabilization Stage 1 → revision history UI, publication drafts, tests, backup/export — затем Stage 2 planning.
+1.21 Stage 1 Completion Gate **закрыт** (`pnpm stage1:acceptance`, `docs/STAGE1_ACCEPTANCE.md`).
+1.15 Cleanup & Technical Debt **закрыт** (audit, media size, smoke isolation/lifecycle, docs).
+1.14 Quality & Tooling **закрыт** (quality commands, coverage, backup/restore, smoke suite).
+1.13 Local Accounts Architecture **закрыт** (migration v4, repository, service, Accounts UI, account tabs, tests, smoke).
+1.11 Revision History **закрыт** (migration v2, policy, UI, tests, smoke).

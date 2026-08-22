@@ -2,18 +2,33 @@ import type { PlatformPreviewProps } from '@reizoko/platform-sdk';
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
 import './instagram-preview.css';
 
-export function InstagramPreview({ transformed, getMediaUrl }: PlatformPreviewProps) {
+export function InstagramPreview({ transformed, getMediaUrl, socialAccount }: PlatformPreviewProps) {
   const images = transformed.images;
   const firstImage = images[0];
   const imageUrl = firstImage ? getMediaUrl(firstImage.mediaId) : null;
+  const avatarUrl = socialAccount?.avatarMediaId
+    ? getMediaUrl(socialAccount.avatarMediaId)
+    : null;
+  const username =
+    socialAccount?.handle?.replace(/^@/, '') ?? socialAccount?.displayName ?? 'reizoko_user';
+  const headerName = socialAccount?.displayName ?? 'reizoko_user';
+  const headerHandle = socialAccount?.handle ?? `@${username}`;
 
   return (
-    <div className="ig-preview">
+    <div className="ig-preview" data-testid="instagram-preview">
       <div className="ig-preview__header">
-        <div className="ig-preview__avatar" />
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="" className="ig-preview__avatar ig-preview__avatar--image" />
+        ) : (
+          <div className="ig-preview__avatar" />
+        )}
         <div>
-          <div className="ig-preview__username">reizoko_user</div>
-          <div className="ig-preview__location">Preview · Reizoko</div>
+          <div className="ig-preview__username" data-testid="preview-account-name">
+            {headerName}
+          </div>
+          <div className="ig-preview__location" data-testid="preview-account-handle">
+            {headerHandle}
+          </div>
         </div>
       </div>
 
@@ -44,7 +59,7 @@ export function InstagramPreview({ transformed, getMediaUrl }: PlatformPreviewPr
       <div className="ig-preview__likes">Нравится: reizoko и другие</div>
 
       <div className="ig-preview__caption">
-        <strong>reizoko_user</strong>{' '}
+        <strong>{username}</strong>{' '}
         {transformed.text || <span className="muted">Подпись к публикации…</span>}
       </div>
     </div>

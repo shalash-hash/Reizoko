@@ -12,6 +12,8 @@
   "app": {
     "windows": [
       {
+        "label": "main",
+        "create": false,
         "title": "Reizoko",
         "width": 1280,
         "height": 860,
@@ -42,7 +44,7 @@
   },
   "plugins": {
     "sql": {
-      "preload": ["sqlite:reizoko.db"]
+      "preload": ["sqlite:reizoko.db", "sqlite:reizoko-smoke.db"]
     }
   }
 }

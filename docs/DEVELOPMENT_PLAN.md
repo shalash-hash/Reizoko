@@ -2,7 +2,7 @@
 
 > Нумерованная дорожная карта с актуальными статусами.  
 > Главный контекст: [MASTER_CONTEXT.md](./MASTER_CONTEXT.md)  
-> Актуализирован: **21 августа 2026** (аудит репозитория).
+> Актуализирован: **22 августа 2026** (закрытие Stage 1 — 1.21).
 
 ## Легенда статусов
 
@@ -21,19 +21,22 @@
 
 | | ID | Задача |
 |---|-----|--------|
-| 🟡 | **1.19** | UI/UX polish & Light/Dark consistency |
-| ➡️ | **1.20** | Production desktop build & Stage 1 stabilization |
+| ✅ | **Stage 1** | Local Desktop — **COMPLETE** |
+| ➡️ | **2.1** | Web browser client (planning not started) |
 
 ```text
-Stage:    1 — Local Desktop
-Substage: 1.19 → 1.20
+Stage:    1 — Local Desktop ✅ COMPLETE
+Next:     Stage 2 — planning not started
 ```
 
 ---
 
-# STAGE 1 — Local Desktop
+# STAGE 1 — Local Desktop ✅ COMPLETE
 
-Цель: полноценный локальный Reizoko — создание Master Post, live previews, библиотека, persistence, production build.
+Цель Stage 1 достигнута: полноценный локальный Reizoko — Master Post, live previews, библиотека, persistence, production build.
+
+**Baseline version:** 0.1.0  
+**Acceptance record:** [STAGE1_ACCEPTANCE.md](./STAGE1_ACCEPTANCE.md)
 
 ---
 
@@ -47,7 +50,7 @@ Substage: 1.19 → 1.20
 | 1.0.4 | Root scripts (dev, build, lint, typecheck) | ✅ DONE | `package.json` |
 | 1.0.5 | README + docs skeleton | ✅ DONE | `docs/ARCHITECTURE.md`, `ROADMAP.md` |
 | 1.0.6 | Windows dev launcher (`dev.bat`) | ✅ DONE | `BROWSER=none`, vite `open: false` |
-| 1.0.7 | Initial git commit | ⬜ PLANNED | Repo initialized, 0 commits |
+| 1.0.7 | Initial git commit | ✅ DONE | Pushed to GitHub |
 
 ---
 
@@ -79,8 +82,8 @@ Substage: 1.19 → 1.20
 | 1.2.5 | WorkspaceRepository | ✅ DONE | JSON blob id=1 |
 | 1.2.6 | SettingsRepository | ✅ DONE | Key-value |
 | 1.2.7 | MediaRepository | ✅ DONE | Metadata CRUD |
-| 1.2.8 | PublicationRepository | ⬜ PLANNED | Table exists, no repo |
-| 1.2.9 | SocialAccountRepository | ⬜ PLANNED | Table exists, no repo |
+| 1.2.8 | PublicationRepository | ✅ DONE | Stage 1.12 — `SqlitePublicationRepository` |
+| 1.2.9 | SocialAccountRepository | ✅ DONE | Stage 1.13 — `SqliteSocialAccountRepository` |
 | 1.2.10 | UI isolation from SQL | ✅ DONE | Only packages/database executes SQL |
 
 ---
@@ -108,7 +111,7 @@ Substage: 1.19 → 1.20
 | 1.4.5 | Drag-and-drop reorder | ✅ DONE | @dnd-kit |
 | 1.4.6 | Title editing | ✅ DONE | In canvas header |
 | 1.4.7 | Add/delete blocks | ✅ DONE | |
-| 1.4.8 | Planned block types (video, link, …) | ⬜ PLANNED | Types defined, throw on create |
+| 1.4.8 | Planned block types (video, link, …) | ➡️ Stage 2 | Types defined; explicit unsupported in Stage 1 |
 
 ---
 
@@ -154,7 +157,7 @@ Substage: 1.19 → 1.20
 | 1.7.5 | Create new draft | ✅ DONE | From library header |
 | 1.7.6 | Empty state | ✅ DONE | |
 | 1.7.7 | Grid / List layout toggle | ✅ DONE | |
-| 1.7.8 | Delete from library | ⬜ PLANNED | Repository method exists |
+| 1.7.8 | Delete from library | ➡️ Stage 2 | Repository method exists; UI deferred |
 | 1.7.9 | Thumbnails / rich cards | ⬜ PLANNED | Mini preview lines only |
 
 ---
@@ -196,106 +199,128 @@ Substage: 1.19 → 1.20
 | 1.10.6 | PlannedFeature placeholders | ✅ DONE | Calendar, Analytics, etc. |
 | 1.10.7 | SuperDesign approved reference doc | ✅ DONE | `.superdesign/approved-design-system.md` |
 | 1.10.8 | Screenshot capture script | ✅ DONE | `scripts/capture-screenshots.mjs` |
-| 1.10.9 | docs/screenshots output | ⬜ PLANNED | Directory not populated |
+| 1.10.9 | docs/screenshots output | ✅ DONE | 14 light/dark screenshots |
 
 ---
 
-## 1.11 Revision History
+## 1.11 Revision History ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.11.1 | Append revision on save | ✅ DONE | Automatic in repository |
-| 1.11.2 | getRevisions API | ✅ DONE | Repository method |
-| 1.11.3 | Revision list UI | ⬜ PLANNED | |
-| 1.11.4 | Restore previous revision | ⬜ PLANNED | |
+| 1.11.1 | Append/save revision architecture | ✅ DONE | Working revision + checkpoints |
+| 1.11.2 | getRevisions API | ✅ DONE | Repository + ContentService |
+| 1.11.3 | Revision list UI | ✅ DONE | Revision History Drawer |
+| 1.11.4 | Restore previous revision | ✅ DONE | Creates new revision, preserves history |
+| 1.11.5 | Manual checkpoint | ✅ DONE | «Создать версию» |
+| 1.11.6 | Revision metadata/title snapshot | ✅ DONE | Migration v2 `revision_metadata` |
+| 1.11.7 | Revision tests | ✅ DONE | vitest in `@reizoko/core` + `@reizoko/database` |
 
 ---
 
-## 1.12 Publishing (Local Architecture)
+## 1.12 Publishing (Local Architecture) ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.12.1 | Publication schema | ✅ DONE | SQLite table |
-| 1.12.2 | PublicationRepository | ⬜ PLANNED | |
-| 1.12.3 | Local draft publication records | ⬜ PLANNED | Pre-API workflow design TBD |
-| 1.12.4 | Manual publish flow (when API ready) | ⬜ PLANNED | Stage 3 decision point |
+| 1.12.1 | PublicationBatch + migration v3 | ✅ DONE | `publication_batches`, snapshot columns |
+| 1.12.2 | PublicationRepository + BatchRepository | ✅ DONE | SQLite implementations |
+| 1.12.3 | PublicationService.prepareBatch | ✅ DONE | Checkpoint, transform, validate, snapshot |
+| 1.12.4 | Publication checkpoint (origin=publication) | ✅ DONE | Immutable revision before batch |
+| 1.12.5 | PreparedPublicationSnapshot | ✅ DONE | Platform-neutral, mediaId refs |
+| 1.12.6 | UI «Подготовить публикацию» | ✅ DONE | Open tabs → batch; fake publish disabled |
+| 1.12.7 | Publication architecture tests | ✅ DONE | 10 vitest cases + migration v3 |
+| 1.12.8 | Targeted smoke `publication-draft.mjs` | ✅ DONE | Prepare, immutability, restart persist |
 
 ---
 
-## 1.13 Local Accounts Architecture
+## 1.13 Local Accounts Architecture ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.13.1 | SocialAccount schema | ✅ DONE | |
-| 1.13.2 | Accounts UI (sidebar section) | ⬜ PLANNED | Shows PlannedFeature |
-| 1.13.3 | Local account metadata storage | ⬜ PLANNED | No repository |
+| 1.13.1 | SocialAccount model + migration v4 | ✅ DONE | `connection_state`, handle, soft delete |
+| 1.13.2 | SocialAccountRepository + Service | ✅ DONE | CRUD, validation, no secrets |
+| 1.13.3 | AccountsView UI | ✅ DONE | Local profiles, create/edit/deactivate |
+| 1.13.4 | OpenPlatformTarget workspace model | ✅ DONE | Legacy `openPlatformTabs` migration |
+| 1.13.5 | Account-aware tabs + Platform Picker | ✅ DONE | `Instagram · Компания` tabs |
+| 1.13.6 | Preview account context | ✅ DONE | IG/TG/VK headers |
+| 1.13.7 | Publication integration | ✅ DONE | `socialAccountId` per open target |
+| 1.13.8 | Accounts architecture tests + smoke | ✅ DONE | 12 vitest + `accounts.mjs` |
 
 ---
 
-## 1.14 Quality & Tooling
+## 1.14 Quality & Tooling ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.14.1 | typecheck CI-ready | ✅ DONE | `pnpm typecheck` passes |
-| 1.14.2 | lint CI-ready | ✅ DONE | `pnpm lint` passes |
-| 1.14.3 | Unit tests (core, adapters) | ⬜ PLANNED | 0 test files |
-| 1.14.4 | E2E / integration tests | ⬜ PLANNED | Playwright available |
-| 1.14.5 | Backup / export (JSON) | ⬜ PLANNED | |
-| 1.14.6 | Import from backup | ⬜ PLANNED | |
+| 1.14.1 | typecheck CI-ready | ✅ DONE | `pnpm typecheck` — 0 errors |
+| 1.14.2 | lint CI-ready | ✅ DONE | `pnpm lint` — 0 errors, 0 warnings |
+| 1.14.3 | Unit tests | ✅ DONE | 67 vitest (11 core + 49 database + 7 desktop) |
+| 1.14.4 | E2E / integration / smoke tooling | ✅ DONE | `pnpm quality`, `pnpm smoke:*`, release A–G |
+| 1.14.5 | Backup / export | ✅ DONE | `.reizoko-backup` + JSON export, Settings UI |
+| 1.14.6 | Import / restore | ✅ DONE | validate-first, safety backup, transactional restore |
 
 ---
 
-## 1.15 Cleanup & Technical Debt
+## 1.15 Cleanup & Technical Debt ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.15.1 | Remove legacy AppHeader | ⬜ PLANNED | Unused file |
-| 1.15.2 | TabBar menu handler or remove | ⬜ PLANNED | Dead button |
-| 1.15.3 | Update README commands | ⬜ PLANNED | Simplify tauri:dev |
-| 1.15.4 | Initial git commit | ⬜ PLANNED | User must request |
+| 1.15.1 | Remove legacy AppHeader | ✅ DONE | Удалён на предыдущем этапе |
+| 1.15.2 | TabBar menu handler or remove | ✅ DONE | Dead button removed |
+| 1.15.3 | Update README commands | ✅ DONE | Актуализирован в 1.15 |
+| 1.15.4 | Technical debt audit + fixes | ✅ DONE | media size, smoke lifecycle, migrations, docs |
+| 1.15.5 | Background/minimized automated test startup | ✅ DONE | `REIZOKO_SMOKE_TEST=1` → hidden window |
+
+### Repository housekeeping / User-controlled actions
+
+| ID | Задача | Статус | Notes |
+|----|--------|--------|-------|
+| R.1 | Initial git commit / push | ⏳ WAITING FOR USER COMMAND | Выполняется только по явной команде пользователя |
 
 ---
 
-## 1.19 UI/UX Polish & Light/Dark Consistency 🟡 IN PROGRESS
+## 1.19 UI/UX Polish & Light/Dark Consistency ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
 | 1.19.1 | Editor shell matches approved design | ✅ DONE | Primary reference |
 | 1.19.2 | Platform Picker polish | ✅ DONE | Close, footer, status |
 | 1.19.3 | Library visual polish | ✅ DONE | Grid/list, canvas cards |
-| 1.19.4 | Settings theme preview colors | ✅ DONE | Approved light sidebar |
-| 1.19.5 | Dark theme pass — Library | 🟡 IN PROGRESS | Tokens work; visual QA needed |
-| 1.19.6 | Dark theme pass — Settings | 🟡 IN PROGRESS | |
-| 1.19.7 | Dark theme pass — Platform Picker | 🟡 IN PROGRESS | |
-| 1.19.8 | Dark theme pass — Platform previews | ⬜ PLANNED | Telegram dark reference exists in SuperDesign |
-| 1.19.9 | Inspector/StatusBar dark polish | ⬜ PLANNED | Functional, minor inconsistencies possible |
-| 1.19.10 | Remove design inconsistencies vs approved tokens | 🟡 IN PROGRESS | Ongoing |
+| 1.19.4 | Settings theme preview colors | ✅ DONE | Semantic theme-preview tokens |
+| 1.19.5 | Dark theme pass — Library | ✅ DONE | Token-based surfaces |
+| 1.19.6 | Dark theme pass — Settings | ✅ DONE | Theme cards + panels |
+| 1.19.7 | Dark theme pass — Platform Picker | ✅ DONE | Overlay, cards, badges |
+| 1.19.8 | Dark theme pass — Platform previews | ✅ DONE | IG/TG/VK semantic tokens |
+| 1.19.9 | Inspector/StatusBar dark polish | ✅ DONE | text-inverse, preview stage |
+| 1.19.10 | Remove design inconsistencies vs approved tokens | ✅ DONE | Hardcoded colors removed |
 
 ---
 
-## 1.20 Production Build & Stage 1 Stabilization ➡️ NEXT
+## 1.20 Production Build & Stage 1 Stabilization ✅ DONE
 
 | ID | Задача | Статус | Notes |
 |----|--------|--------|-------|
-| 1.20.1 | `pnpm tauri:build` success on Windows | ➡️ NEXT | Not yet run in audit |
-| 1.20.2 | Verify EXE install & run | ➡️ NEXT | |
-| 1.20.3 | Capture docs/screenshots | ➡️ NEXT | Playwright script ready |
-| 1.20.4 | Smoke test full workflow | ➡️ NEXT | Create → preview → library → restart |
-| 1.20.5 | Document build artifact paths | ➡️ NEXT | In MASTER_CONTEXT |
-| 1.20.6 | Stage 1 sign-off checklist | ➡️ NEXT | After 1.19 complete |
+| 1.20.1 | `pnpm tauri:build` success on Windows | ✅ DONE | Release build 22.08.2026 |
+| 1.20.2 | Verify EXE install & run | ✅ DONE | `reizoko-desktop.exe` starts |
+| 1.20.3 | Capture docs/screenshots | ✅ DONE | 14 PNG in `docs/screenshots/` |
+| 1.20.4 | Phased release smoke test (A–G) | ✅ DONE | `scripts/release-smoke-test.mjs` — 3× PASS; smoke DB `reizoko-smoke.db` |
+| 1.20.5 | Document build artifact paths | ✅ DONE | Updated in MASTER_CONTEXT |
+| 1.20.6 | Stage 1 sign-off checklist | ✅ DONE | `pnpm stage1:acceptance`, `docs/STAGE1_ACCEPTANCE.md` |
 
 ---
 
-## 1.21 Stage 1 Completion Gate
+## 1.21 Stage 1 Completion Gate ✅ DONE
 
-Stage 1 считается **завершённым**, когда выполнены:
+Stage 1 считается **завершённым** — все blocking criteria пройдены:
 
-- [ ] 1.19 UI/UX polish complete (all screens, light + dark)
-- [ ] 1.20 Production build verified
-- [ ] Core workflow smoke-tested on clean Windows install
-- [ ] docs/screenshots populated
-- [ ] Revision history UI *(optional for gate — может перейти в 1.22)*
-- [ ] Initial git commit *(по запросу пользователя)*
+- [x] 1.19 UI/UX polish complete (all screens, light + dark)
+- [x] 1.20 Production build verified
+- [x] Core workflow smoke-tested on release EXE (phases A–G)
+- [x] docs/screenshots populated (14 PNG)
+- [x] Revision history UI
+- [x] 1.14 Quality, backup/restore, coverage
+- [x] 1.15 Cleanup & technical debt
+- [x] Final Stage 1 sign-off checklist (`pnpm stage1:acceptance`)
+- [x] Chained smoke orchestrator — deterministic process isolation
 
 ---
 
@@ -385,17 +410,7 @@ Stage 1 считается **завершённым**, когда выполне
 # Рекомендуемая последовательность после текущего фокуса
 
 ```text
-1.19  UI/UX + Dark pass (🟡 сейчас)
+1.21  Stage 1 completion gate (✅ DONE)
   ↓
-1.20  Production build + smoke test (➡️ следующий)
-  ↓
-1.11  Revision history UI
-  ↓
-1.12  Publication local drafts
-  ↓
-1.14  Tests + backup/export
-  ↓
-1.21  Stage 1 completion gate
-  ↓
-2.x   Stage 2 planning & implementation
+2.x   Stage 2 planning & implementation (NOT STARTED)
 ```

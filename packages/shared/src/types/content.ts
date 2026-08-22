@@ -61,12 +61,21 @@ export interface ContentItem {
   deviceId?: string;
 }
 
+export type RevisionOrigin = 'auto' | 'manual' | 'restore' | 'publication' | 'legacy';
+
+export type RevisionKind = 'working' | 'checkpoint';
+
 export interface ContentRevision {
   id: string;
   contentItemId: string;
   createdAt: string;
+  updatedAt: string;
   blocks: ContentBlock[];
+  metadata: ContentItemMetadata;
   version: number;
+  origin: RevisionOrigin;
+  kind: RevisionKind;
+  restoreFromVersion?: number | null;
 }
 
 export interface ContentItemWithRevision extends ContentItem {
