@@ -22,7 +22,7 @@
 | | ID | Задача |
 |---|-----|--------|
 | ✅ | **Stage 1** | Local Desktop — **COMPLETE** (baseline `v0.1.0-stage1`) |
-| 🟡 | **Stage 1.5** | Connected & Publishing Desktop — **CURRENT** (1.5.1–1.5.4 ✅) |
+| 🟡 | **Stage 1.5** | Connected & Publishing Desktop — **CURRENT** (1.5.1–1.5.5 ✅, 1.5.6 ➡️) |
 | ⬜ | **Stage 2** | Web / Cloud Sync — **DEFERRED** |
 | ⬜ | **Stage 3** | Server Automation — **DEFERRED** |
 
@@ -344,16 +344,17 @@ Stage 1 считается **завершённым** — все blocking criter
 | 1.5.2 | Secure Credential Infrastructure | ✅ DONE | SecretStore, Windows Credential Manager, migration v5 |
 | 1.5.3 | Account Connection UI | ✅ DONE | Telegram connect/destination dialogs, hierarchy |
 | 1.5.4 | Telegram Bot Connection & Publishing | ✅ DONE | Bot API, real publish, smoke:telegram |
-| 1.5.5 | VK Connection | ➡️ NEXT | VK ID OAuth + community token |
-| 1.5.6 | Instagram / Meta Connection | ⬜ PLANNED | Business/Creator, Meta App Review |
-| 1.5.7 | Local Publisher Engine | ⬜ PLANNED | `PlatformPublisher` implementations |
-| 1.5.8 | Publish Now UX | ⬜ PLANNED | Real HTTP publish from desktop |
-| 1.5.9 | Publication Result / Retry / Remote Links | ⬜ PLANNED | `remotePostId`, `remoteUrl` |
-| 1.5.10 | Local Scheduler | ⬜ PLANNED | Schedule while PC on |
-| 1.5.11 | Natural Time / Exact Time execution | ⬜ PLANNED | Uses shared utils |
-| 1.5.12 | Local Background Queue | ⬜ PLANNED | In-process queue, no Redis |
-| 1.5.13 | Recurring / Evergreen Local Publishing | ⬜ PLANNED | Desktop-only recurrence |
-| 1.5.14 | Connected Desktop Acceptance | ⬜ PLANNED | End-to-end gate |
+| 1.5.5 | Platform Composer / Per-platform Overrides | ✅ DONE | Active tabs, crop/zoom, overrides, snapshot v2, smoke:composer |
+| 1.5.6 | VK Connection | ➡️ NEXT | VK ID OAuth + community token |
+| 1.5.7 | Instagram / Meta Connection | ⬜ PLANNED | Business/Creator, Meta App Review |
+| 1.5.8 | Local Publisher Engine | ⬜ PLANNED | `PlatformPublisher` implementations |
+| 1.5.9 | Publish Now UX | ⬜ PLANNED | Real HTTP publish from desktop |
+| 1.5.10 | Publication Result / Retry / Remote Links | ⬜ PLANNED | `remotePostId`, `remoteUrl` |
+| 1.5.11 | Local Scheduler | ⬜ PLANNED | Schedule while PC on |
+| 1.5.12 | Natural Time / Exact Time execution | ⬜ PLANNED | Uses shared utils |
+| 1.5.13 | Local Background Queue | ⬜ PLANNED | In-process queue, no Redis |
+| 1.5.14 | Recurring / Evergreen Local Publishing | ⬜ PLANNED | Desktop-only recurrence |
+| 1.5.15 | Connected Desktop Acceptance | ⬜ PLANNED | End-to-end gate |
 
 ### 1.5.1 Platform Connection Research & Architecture
 

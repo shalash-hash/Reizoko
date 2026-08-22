@@ -1,0 +1,35 @@
+.media-transform-view {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: inherit;
+  background: var(--bg-surface-muted);
+}
+
+.media-transform-view--interactive {
+  cursor: grab;
+}
+
+.media-transform-view--interactive:active {
+  cursor: grabbing;
+}
+
+.media-transform-view--selected {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.media-transform-view__frame {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.media-transform-view__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: center center;
+  user-select: none;
+  pointer-events: none;
+}

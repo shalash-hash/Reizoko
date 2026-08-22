@@ -206,7 +206,7 @@ describe('PublicationService', () => {
     });
 
     expect(result.publications[0]?.preparedSnapshot.transformedContent.text).toBe('Snapshot body');
-    expect(result.publications[0]?.preparedSnapshot.formatVersion).toBe(1);
+    expect(result.publications[0]?.preparedSnapshot.formatVersion).toBe(2);
     client.close();
   });
 

@@ -8,6 +8,8 @@ import { SqlitePublicationBatchRepository } from './repositories/publication-bat
 import { SqlitePublicationRepository } from './repositories/publication-repository.js';
 import { SqliteSocialAccountRepository } from './repositories/social-account-repository.js';
 import { SqlitePlatformConnectionRepository } from './repositories/platform-connection-repository.js';
+import { SqlitePresentationOverridesRepository } from './repositories/presentation-overrides-repository.js';
+import { SqliteDerivedMediaRepository } from './repositories/derived-media-repository.js';
 
 export interface DatabaseContext {
   client: DatabaseClient;
@@ -19,6 +21,8 @@ export interface DatabaseContext {
   publications: SqlitePublicationRepository;
   socialAccounts: SqliteSocialAccountRepository;
   platformConnections: SqlitePlatformConnectionRepository;
+  presentationOverrides: SqlitePresentationOverridesRepository;
+  derivedMedia: SqliteDerivedMediaRepository;
 }
 
 export async function bootstrapDatabase(client: DatabaseClient): Promise<DatabaseContext> {
@@ -34,5 +38,7 @@ export async function bootstrapDatabase(client: DatabaseClient): Promise<Databas
     publications: new SqlitePublicationRepository(client),
     socialAccounts: new SqliteSocialAccountRepository(client),
     platformConnections: new SqlitePlatformConnectionRepository(client),
+    presentationOverrides: new SqlitePresentationOverridesRepository(client),
+    derivedMedia: new SqliteDerivedMediaRepository(client),
   };
 }

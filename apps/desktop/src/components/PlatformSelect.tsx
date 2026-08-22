@@ -153,7 +153,7 @@ export function PlatformSelect({
           <span className="platform-select__option-name">{platform.name}</span>
         </span>
         {!platform.available ? (
-          <span className="platform-select__option-status">Preview пока недоступен</span>
+          <span className="platform-select__option-status">Предпросмотр пока недоступен</span>
         ) : null}
       </button>
     );

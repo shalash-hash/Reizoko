@@ -1,3 +1,4 @@
+import { InstagramBrandIcon, TelegramBrandIcon, VkBrandIcon } from './platform-icons/brand-icons';
 import './platform-icon.css';
 
 const PLATFORM_COLORS: Record<string, string> = {
@@ -12,18 +13,6 @@ const PLATFORM_COLORS: Record<string, string> = {
   bluesky: '#0085FF',
 };
 
-const PLATFORM_LABELS: Record<string, string> = {
-  instagram: 'IG',
-  telegram: 'TG',
-  vk: 'VK',
-  facebook: 'f',
-  threads: '@',
-  x: 'X',
-  tiktok: '♪',
-  linkedin: 'in',
-  bluesky: '🦋',
-};
-
 interface PlatformIconProps {
   platformId: string;
   size?: number;
@@ -32,7 +21,10 @@ interface PlatformIconProps {
 
 export function PlatformIcon({ platformId, size = 20, muted = false }: PlatformIconProps) {
   const color = PLATFORM_COLORS[platformId] ?? 'var(--text-muted)';
-  const label = PLATFORM_LABELS[platformId] ?? platformId.slice(0, 2).toUpperCase();
+  const iconColor = muted ? 'var(--text-muted)' : color;
+  const background = muted ? 'var(--bg-surface-muted)' : `color-mix(in srgb, ${color} 14%, transparent)`;
+
+  const icon = renderBrandIcon(platformId, size);
 
   return (
     <span
@@ -40,13 +32,33 @@ export function PlatformIcon({ platformId, size = 20, muted = false }: PlatformI
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.42,
-        background: muted ? 'var(--bg-surface-muted)' : `${color}18`,
-        color: muted ? 'var(--text-muted)' : color,
+        background,
+        color: iconColor,
       }}
+      data-platform-icon={platformId}
       aria-hidden
     >
-      {label}
+      {icon}
     </span>
   );
+}
+
+function renderBrandIcon(platformId: string, size: number) {
+  const iconSize = Math.round(size * 0.62);
+  const className = 'platform-icon__svg';
+
+  switch (platformId) {
+    case 'instagram':
+      return <InstagramBrandIcon size={iconSize} className={className} />;
+    case 'telegram':
+      return <TelegramBrandIcon size={iconSize} className={className} />;
+    case 'vk':
+      return <VkBrandIcon size={iconSize} className={className} />;
+    default:
+      return (
+        <span className="platform-icon__fallback" style={{ fontSize: iconSize * 0.7 }}>
+          {platformId.slice(0, 1).toUpperCase()}
+        </span>
+      );
+  }
 }

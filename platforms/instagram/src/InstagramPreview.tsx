@@ -1,11 +1,25 @@
 import type { PlatformPreviewProps } from '@reizoko/platform-sdk';
+import type { MediaTransform } from '@reizoko/shared';
+import { MediaTransformView } from '@reizoko/platform-sdk';
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react';
 import './instagram-preview.css';
 
-export function InstagramPreview({ transformed, getMediaUrl, socialAccount }: PlatformPreviewProps) {
+export function InstagramPreview({
+  transformed,
+  getMediaUrl,
+  socialAccount,
+  getMediaTransform: getMediaTransformProp,
+  activeMediaId,
+  onSelectMedia,
+  onTransformChange,
+}: PlatformPreviewProps) {
   const images = transformed.images;
   const firstImage = images[0];
-  const imageUrl = firstImage ? getMediaUrl(firstImage.mediaId) : null;
+  const currentMediaId = activeMediaId ?? firstImage?.mediaId ?? null;
+  const imageUrl = currentMediaId ? getMediaUrl(currentMediaId) : null;
+  const transform: MediaTransform = currentMediaId
+    ? getMediaTransformProp?.(currentMediaId) ?? { mediaId: currentMediaId }
+    : { mediaId: '' };
   const avatarUrl = socialAccount?.avatarMediaId
     ? getMediaUrl(socialAccount.avatarMediaId)
     : null;
@@ -33,20 +47,33 @@ export function InstagramPreview({ transformed, getMediaUrl, socialAccount }: Pl
       </div>
 
       <div className="ig-preview__media">
-        {imageUrl ? (
-          <img src={imageUrl} alt={firstImage?.alt ?? 'Post image'} />
+        {imageUrl && currentMediaId ? (
+          <MediaTransformView
+            imageUrl={imageUrl}
+            transform={transform}
+            interactive
+            selected
+            onSelect={() => onSelectMedia?.(currentMediaId)}
+            onTransformChange={(next) => onTransformChange?.(next)}
+          />
         ) : (
           <div className="ig-preview__placeholder">
             <span>Добавьте изображение в редакторе</span>
           </div>
         )}
-        {images.length > 1 && (
+        {images.length > 1 ? (
           <div className="ig-preview__carousel-dots">
-            {images.map((_, i) => (
-              <span key={i} className={i === 0 ? 'active' : ''} />
+            {images.map((image, index) => (
+              <button
+                key={image.mediaId}
+                type="button"
+                className={image.mediaId === currentMediaId ? 'active' : ''}
+                onClick={() => onSelectMedia?.(image.mediaId)}
+                aria-label={`Изображение ${index + 1}`}
+              />
             ))}
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="ig-preview__actions">

@@ -4,10 +4,28 @@ import { blocksToPlainText, extractImages } from '@reizoko/platform-sdk';
 
 export const telegramAdapter: PlatformAdapter = {
   id: 'telegram',
-  name: 'Telegram',
-  icon: '✈️',
+  name: 'Телеграм',
+  icon: 'telegram',
   color: '#0088CC',
   available: true,
+  composerCapabilities: {
+    supportedAspectRatios: [],
+    allowCrop: false,
+    allowZoom: false,
+    allowPan: false,
+    allowRotation: false,
+    allowAdjustments: false,
+    allowFilters: false,
+    allowCarouselReorder: true,
+    allowTextOverride: true,
+    allowAltText: false,
+  },
+  publisherCapabilities: {
+    supportsDerivedMedia: false,
+    supportsCarousel: true,
+    supportsHtmlCaption: true,
+    supportsNativeFilters: false,
+  },
   capabilities: {
     maxTextLength: 4096,
     supportsHeadings: true,

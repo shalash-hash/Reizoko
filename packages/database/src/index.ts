@@ -8,5 +8,7 @@ export * from './repositories/publication-batch-repository.js';
 export * from './repositories/publication-repository.js';
 export * from './repositories/social-account-repository.js';
 export * from './repositories/platform-connection-repository.js';
+export * from './repositories/presentation-overrides-repository.js';
+export * from './repositories/derived-media-repository.js';
 export * from './repositories/backup-repository.impl.js';
 export * from './bootstrap.js';

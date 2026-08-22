@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addPlatformTarget,
   createPlatformTarget,
+  getPlatformTargetLabel,
   isTargetOpen,
   normalizeWorkspaceState,
   toPreviewAccountContext,
@@ -44,6 +45,15 @@ describe('platform targets', () => {
       platformId: 'telegram',
       socialAccountId: null,
     });
+  });
+
+  it('uses Russian platform display names in target labels', () => {
+    expect(getPlatformTargetLabel('telegram')).toBe('Телеграм');
+    expect(getPlatformTargetLabel('vk')).toBe('ВКонтакте');
+    expect(getPlatformTargetLabel('instagram')).toBe('Instagram');
+    expect(
+      getPlatformTargetLabel('vk', { displayName: 'Компания' }),
+    ).toBe('ВКонтакте · Компания');
   });
 
   it('maps preview account context from social account', () => {

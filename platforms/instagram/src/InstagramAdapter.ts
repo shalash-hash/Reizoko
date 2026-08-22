@@ -7,9 +7,32 @@ const MAX_CAPTION = 2200;
 export const instagramAdapter: PlatformAdapter = {
   id: 'instagram',
   name: 'Instagram',
-  icon: '📷',
+  icon: 'instagram',
   color: '#E1306C',
   available: true,
+  composerCapabilities: {
+    supportedAspectRatios: [
+      { id: 'original', label: 'Оригинал', ratio: null },
+      { id: '1:1', label: 'Квадрат 1:1', ratio: 1 },
+      { id: '4:5', label: 'Вертикальный 4:5', ratio: 4 / 5 },
+      { id: '1.91:1', label: 'Горизонтальный 1.91:1', ratio: 1.91 },
+    ],
+    allowCrop: true,
+    allowZoom: true,
+    allowPan: true,
+    allowRotation: true,
+    allowAdjustments: true,
+    allowFilters: true,
+    allowCarouselReorder: true,
+    allowTextOverride: true,
+    allowAltText: false,
+  },
+  publisherCapabilities: {
+    supportsDerivedMedia: true,
+    supportsCarousel: true,
+    supportsHtmlCaption: false,
+    supportsNativeFilters: false,
+  },
   capabilities: {
     maxTextLength: MAX_CAPTION,
     maxImages: 10,

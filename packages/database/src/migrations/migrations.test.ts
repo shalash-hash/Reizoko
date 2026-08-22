@@ -24,6 +24,8 @@ describe('database migrations', () => {
         'publication_batches',
         'publications',
         'platform_connections',
+        'platform_presentation_overrides',
+        'derived_media_variants',
         'schema_migrations',
         'social_accounts',
         'workspace_state',

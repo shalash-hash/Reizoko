@@ -25,6 +25,7 @@ import { StatusBar } from './StatusBar';
 import { getPreparePublicationState } from '../utils/prepare-publication';
 import { RevisionHistoryDrawer } from './RevisionHistoryDrawer';
 import { InspectorPanel } from './InspectorPanel';
+import { PlatformComposerPanel } from './PlatformComposerPanel';
 import { BlockEditor } from '@reizoko/editor';
 import { platformRegistry } from '@reizoko/platform-sdk';
 import { getAllPlatformCatalog } from '../platforms/planned-catalog';
@@ -118,8 +119,7 @@ export function AppShell() {
 
   const prepareState = getPreparePublicationState(blocks, workspace.openPlatformTargets);
   const activeTarget = resolveActivePlatformTarget(workspace);
-  const inspectorPlatformId =
-    activeTarget?.platformId ?? workspace.openPlatformTargets[0]?.platformId ?? 'instagram';
+  const isPlatformTabActive = Boolean(activeTarget && workspace.activeTabId.startsWith('platform-'));
 
   const handleAddImage = async () => {
     if (!db) return;
@@ -173,8 +173,17 @@ export function AppShell() {
         <div className="app-shell__canvas" data-testid="workspace-canvas">{renderEditorWorkspace()}</div>
         {showRevisionHistory ? (
           <RevisionHistoryDrawer />
+        ) : isPlatformTabActive && activeTarget ? (
+          <PlatformComposerPanel
+            platformId={activeTarget.platformId}
+            socialAccountId={activeTarget.socialAccountId}
+          />
         ) : (
-          <InspectorPanel platformId={inspectorPlatformId} />
+          <InspectorPanel
+            platformId={
+              activeTarget?.platformId ?? workspace.openPlatformTargets[0]?.platformId ?? 'instagram'
+            }
+          />
         )}
       </div>
     );

@@ -44,7 +44,7 @@ export function SettingsView() {
           <h1>Настройки</h1>
           <p>Внешний вид и информация о приложении</p>
         </div>
-        <Badge variant="default">Stage 1</Badge>
+        <Badge variant="default">Этап 1</Badge>
       </header>
 
       <section className="settings-panel">
@@ -92,7 +92,7 @@ export function SettingsView() {
           <div>
             <strong>Reizoko</strong>
             <p>Единый центр создания и публикации контента</p>
-            <p className="muted">Stage 1 — Local Desktop · v0.1.0</p>
+            <p className="muted">Этап 1 — локальный desktop · v0.1.0</p>
           </div>
         </div>
       </section>

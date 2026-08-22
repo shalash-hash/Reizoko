@@ -21,11 +21,12 @@ export interface PreparedTransformedContent {
 }
 
 export interface PreparedPublicationSnapshot {
-  formatVersion: 1;
+  formatVersion: 1 | 2;
   platformId: string;
   transformedContent: PreparedTransformedContent;
   validationIssues: PreparedValidationIssue[];
   preparedAt: string;
+  presentation?: import('./platform-presentation.js').PreparedPresentationSnapshot;
 }
 
 export interface PublicationTarget {

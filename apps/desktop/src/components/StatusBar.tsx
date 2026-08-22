@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown, Loader2, RefreshCw, X } from 'lucide-react';
-import { platformRegistry } from '@reizoko/platform-sdk';
+import { getPlatformDisplayName } from '@reizoko/core';
 import type { SaveStatus } from '../stores/app-store';
 import './status-bar.css';
 
@@ -44,7 +44,7 @@ function formatTime() {
 }
 
 function platformLabel(platformId: string): string {
-  return platformRegistry.get(platformId)?.adapter.name ?? platformId;
+  return getPlatformDisplayName(platformId);
 }
 
 export function StatusBar({

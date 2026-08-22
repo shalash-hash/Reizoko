@@ -1,8 +1,25 @@
 import type { PlatformPreviewProps } from '@reizoko/platform-sdk';
+import type { MediaTransform } from '@reizoko/shared';
+import { MediaTransformView } from '@reizoko/platform-sdk';
 import { ThumbsUp, MessageSquare, Share2, MoreHorizontal } from 'lucide-react';
 import './vk-preview.css';
 
-export function VkPreview({ transformed, getMediaUrl, socialAccount }: PlatformPreviewProps) {
+export function VkPreview({
+  transformed,
+  getMediaUrl,
+  socialAccount,
+  getMediaTransform: getMediaTransformProp,
+  activeMediaId,
+  onSelectMedia,
+  onTransformChange,
+}: PlatformPreviewProps) {
+  const images = transformed.images;
+  const firstImage = images[0];
+  const currentMediaId = activeMediaId ?? firstImage?.mediaId ?? null;
+  const imageUrl = currentMediaId ? getMediaUrl(currentMediaId) : null;
+  const transform: MediaTransform = currentMediaId
+    ? getMediaTransformProp?.(currentMediaId) ?? { mediaId: currentMediaId }
+    : { mediaId: '' };
   const avatarUrl = socialAccount?.avatarMediaId
     ? getMediaUrl(socialAccount.avatarMediaId)
     : null;
@@ -32,14 +49,35 @@ export function VkPreview({ transformed, getMediaUrl, socialAccount }: PlatformP
         {transformed.text || <span className="muted">Текст записи…</span>}
       </div>
 
-      {transformed.images.length > 0 && (
-        <div className={`vk-preview__photos vk-preview__photos--${Math.min(transformed.images.length, 3)}`}>
-          {transformed.images.map((img) => {
-            const url = getMediaUrl(img.mediaId);
-            return url ? <img key={img.mediaId} src={url} alt={img.alt ?? ''} /> : null;
-          })}
+      {imageUrl && currentMediaId ? (
+        <div className="vk-preview__media">
+          <MediaTransformView
+            imageUrl={imageUrl}
+            transform={transform}
+            interactive
+            selected
+            onSelect={() => onSelectMedia?.(currentMediaId)}
+            onTransformChange={(next) => onTransformChange?.(next)}
+          />
+          {images.length > 1 ? (
+            <div className="vk-preview__carousel-dots">
+              {images.map((image, index) => (
+                <button
+                  key={image.mediaId}
+                  type="button"
+                  className={image.mediaId === currentMediaId ? 'active' : ''}
+                  onClick={() => onSelectMedia?.(image.mediaId)}
+                  aria-label={`Изображение ${index + 1}`}
+                />
+              ))}
+            </div>
+          ) : null}
         </div>
-      )}
+      ) : transformed.images.length > 0 ? (
+        <div className="vk-preview__photos vk-preview__photos--placeholder">
+          <span className="muted">Изображение недоступно</span>
+        </div>
+      ) : null}
 
       <div className="vk-preview__actions">
         <button type="button" className="vk-preview__action">

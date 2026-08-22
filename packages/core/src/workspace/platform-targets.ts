@@ -1,5 +1,6 @@
 import type { OpenPlatformTarget, SocialAccount, WorkspaceState } from '@reizoko/shared';
 import { generateId } from '@reizoko/shared';
+import { getPlatformDisplayName } from '../platform/platform-display.js';
 
 export function targetKey(platformId: string, socialAccountId?: string | null): string {
   return `${platformId}:${socialAccountId ?? ''}`;
@@ -88,9 +89,10 @@ export function normalizeWorkspaceState(state: WorkspaceState): WorkspaceState {
 }
 
 export function getPlatformTargetLabel(
-  platformName: string,
+  platformId: string,
   account?: Pick<SocialAccount, 'displayName'> | null,
 ): string {
+  const platformName = getPlatformDisplayName(platformId);
   if (!account) return platformName;
   return `${platformName} · ${account.displayName}`;
 }

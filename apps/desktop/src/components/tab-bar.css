@@ -44,30 +44,53 @@
   transition:
     background var(--transition-fast),
     color var(--transition-fast),
-    box-shadow var(--transition-fast);
+    border-color var(--transition-fast);
 }
 
-.tab-bar__tab:hover {
+.tab-bar__tab:not(.tab-bar__tab--active):hover {
   background: var(--bg-tab-hover);
   color: var(--text-secondary);
+  border-color: var(--border-subtle);
 }
 
 .tab-bar__tab--active {
   background: var(--bg-tab-active);
-  border-color: var(--border-subtle);
+  border-color: var(--border-strong);
   color: var(--text-primary);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.04);
-  z-index: 2;
+  font-weight: 600;
+  z-index: 3;
+}
+
+.tab-bar__tab--platform.tab-bar__tab--active {
+  background: color-mix(in srgb, var(--platform-accent, var(--accent)) 16%, var(--bg-tab-active));
+  border-top: 3px solid var(--platform-accent, var(--accent));
+  border-left: 1px solid color-mix(in srgb, var(--platform-accent, var(--accent)) 35%, var(--border-subtle));
+  border-right: 1px solid color-mix(in srgb, var(--platform-accent, var(--accent)) 35%, var(--border-subtle));
+  border-bottom: 1px solid var(--bg-tab-active);
+  margin-bottom: -1px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
 }
 
 .tab-bar__tab--pinned.tab-bar__tab--active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-tab-active));
+  border-top: 3px solid var(--accent);
+  border-left: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
+  border-right: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border-subtle));
   border-bottom: 1px solid var(--bg-tab-active);
   margin-bottom: -1px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.tab-bar__tab:not(.tab-bar__tab--active) {
+  background: var(--bg-tab-inactive);
+  color: var(--text-muted);
+  font-weight: 500;
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .tab-bar__tab--platform {
   padding-right: 4px;
-  border-left: 3px solid var(--platform-accent, var(--accent));
 }
 
 .tab-bar__tab-main {
@@ -188,4 +211,9 @@
 .tab-bar__add svg {
   width: 18px;
   height: 18px;
+}
+
+[data-theme='dark'] .tab-bar__tab--platform.tab-bar__tab--active,
+[data-theme='dark'] .tab-bar__tab--pinned.tab-bar__tab--active {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }

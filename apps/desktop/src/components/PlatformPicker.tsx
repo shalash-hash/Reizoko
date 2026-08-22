@@ -80,7 +80,7 @@ export function PlatformPicker({
           <PlatformIcon platformId={platform.id} size={20} muted={!platform.available} />
           <span className="platform-picker__group-name">{platform.name}</span>
           {!platform.available ? (
-            <span className="platform-picker__group-status">Preview пока недоступен</span>
+            <span className="platform-picker__group-status">Предпросмотр пока недоступен</span>
           ) : null}
         </div>
 

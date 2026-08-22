@@ -17,7 +17,7 @@ export function PlannedFeature({ title, description, stage, children }: PlannedF
       </div>
       <div className="planned-feature__header">
         <h2>{title}</h2>
-        <Badge variant="planned">{stage ? `Stage ${stage}` : 'Planned'}</Badge>
+        <Badge variant="planned">{stage ? `Этап ${stage}` : 'Скоро'}</Badge>
       </div>
       <p>{description}</p>
       {children}

@@ -43,7 +43,7 @@ function getConnectionBadgeVariant(
 }
 
 function getConnectionLabel(connection: PlatformConnection): string {
-  return connection.displayName ?? connection.handle ?? 'Telegram-бот';
+  return connection.displayName ?? connection.handle ?? 'Телеграм-бот';
 }
 
 export function AccountsView() {

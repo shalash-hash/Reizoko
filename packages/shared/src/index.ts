@@ -8,6 +8,7 @@ export * from './types/platform-connection.js';
 export * from './types/publishing-connection.js';
 export * from './types/workspace.js';
 export * from './types/media.js';
+export * from './types/platform-presentation.js';
 export * from './types/sync.js';
 export * from './utils/id.js';
 export * from './utils/date.js';

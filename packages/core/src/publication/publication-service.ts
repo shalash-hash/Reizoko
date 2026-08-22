@@ -1,4 +1,5 @@
 import type { PreparedPublicationSnapshot, Publication } from '@reizoko/shared';
+import type { PlatformPresentationOverrides } from '@reizoko/shared';
 import { nowIso } from '@reizoko/shared';
 import type { PlatformRegistry } from '@reizoko/platform-sdk';
 import type { ContentRepository } from '../content/content-service.js';
@@ -10,10 +11,16 @@ import type { SocialAccountRepository } from '../social-account/social-account-r
 import { TelegramPublisher, type TelegramPublishInput } from '../telegram/telegram-publisher.js';
 import type { TelegramTransport } from '../telegram/telegram-transport.js';
 import type { ContentRevision, PublicationTarget } from '@reizoko/shared';
+import {
+  buildPreparedPresentationSnapshot,
+  presentationTargetKey,
+  resolvePlatformText,
+} from '../composer/media-transform.js';
 
 export interface PreparePublicationBatchInput {
   contentItemId: string;
   targets: PublicationTarget[];
+  presentationByTargetKey?: Record<string, PlatformPresentationOverrides>;
 }
 
 export interface PreparePublicationBatchResult {
@@ -72,7 +79,9 @@ export class PublicationService {
 
     const publications: Publication[] = [];
     for (const target of input.targets) {
-      const snapshot = this.buildPreparedSnapshot(checkpoint.blocks, target);
+      const targetKey = presentationTargetKey(target.platformId, target.socialAccountId);
+      const overrides = input.presentationByTargetKey?.[targetKey] ?? null;
+      const snapshot = this.buildPreparedSnapshot(checkpoint.blocks, target, overrides);
       const publication = await this.publicationRepository.create({
         batchId: batch.id,
         contentRevisionId: checkpoint.id,
@@ -287,9 +296,11 @@ export class PublicationService {
   private buildPreparedSnapshot(
     blocks: ContentRevision['blocks'],
     target: PublicationTarget,
+    overrides?: PlatformPresentationOverrides | null,
   ): PreparedPublicationSnapshot {
     const platform = this.platformRegistry.get(target.platformId);
     const preparedAt = nowIso();
+    const presentation = buildPreparedPresentationSnapshot(overrides, blocks);
 
     if (!platform) {
       const issue = {
@@ -297,23 +308,25 @@ export class PublicationService {
         message: `Платформа «${target.platformId}» не найдена`,
       };
       return {
-        formatVersion: 1,
+        formatVersion: 2,
         platformId: target.platformId,
         transformedContent: { text: '', images: [], warnings: [issue] },
         validationIssues: [issue],
         preparedAt,
+        presentation,
       };
     }
 
     const transformed = platform.adapter.transform(blocks);
     const validationIssues = platform.adapter.validate(blocks);
+    const resolvedText = resolvePlatformText(blocks, overrides);
 
     return {
-      formatVersion: 1,
+      formatVersion: 2,
       platformId: target.platformId,
       transformedContent: {
-        text: transformed.text,
-        images: transformed.images.map((image) => ({
+        text: resolvedText || transformed.text,
+        images: (presentation?.media ?? transformed.images).map((image) => ({
           mediaId: image.mediaId,
           alt: image.alt,
           caption: image.caption,
@@ -322,6 +335,7 @@ export class PublicationService {
       },
       validationIssues,
       preparedAt,
+      presentation,
     };
   }
 }

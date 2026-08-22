@@ -1,4 +1,5 @@
 import type { ContentBlock } from '@reizoko/shared';
+import type { MediaTransform } from '@reizoko/shared';
 import type { ComponentType } from 'react';
 
 export type PlatformValidationSeverity = 'info' | 'warning' | 'error';
@@ -18,6 +19,32 @@ export interface PlatformCapabilities {
   supportsLinks: boolean;
 }
 
+export interface AspectRatioOption {
+  id: string;
+  label: string;
+  ratio: number | null;
+}
+
+export interface PlatformComposerCapabilities {
+  supportedAspectRatios: AspectRatioOption[];
+  allowCrop: boolean;
+  allowZoom: boolean;
+  allowPan: boolean;
+  allowRotation: boolean;
+  allowAdjustments: boolean;
+  allowFilters: boolean;
+  allowCarouselReorder: boolean;
+  allowTextOverride: boolean;
+  allowAltText: boolean;
+}
+
+export interface PlatformPublisherCapabilities {
+  supportsDerivedMedia: boolean;
+  supportsCarousel: boolean;
+  supportsHtmlCaption: boolean;
+  supportsNativeFilters: boolean;
+}
+
 export interface TransformedContent {
   text: string;
   images: Array<{ mediaId: string; alt?: string; caption?: string }>;
@@ -32,6 +59,8 @@ export interface PlatformAdapter {
   available: boolean;
   plannedMessage?: string;
   capabilities: PlatformCapabilities;
+  composerCapabilities?: PlatformComposerCapabilities;
+  publisherCapabilities?: PlatformPublisherCapabilities;
   transform(blocks: ContentBlock[]): TransformedContent;
   validate(blocks: ContentBlock[]): PlatformValidationIssue[];
 }
@@ -48,6 +77,10 @@ export interface PlatformPreviewProps {
   issues: PlatformValidationIssue[];
   socialAccount?: PlatformPreviewAccountContext | null;
   getMediaUrl: (mediaId: string) => string | null;
+  getMediaTransform?: (mediaId: string) => MediaTransform | undefined;
+  activeMediaId?: string | null;
+  onSelectMedia?: (mediaId: string) => void;
+  onTransformChange?: (transform: MediaTransform) => void;
 }
 
 export interface PlatformDefinition {
@@ -86,3 +119,5 @@ export function registerPlatform(definition: PlatformDefinition): void {
 }
 
 export * from './utils/transform-helpers.js';
+export { MediaTransformView } from './preview/MediaTransformView.js';
+export { getViewportAspectRatio, getAspectRatioValue } from './preview/media-transform-math.js';

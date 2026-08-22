@@ -82,7 +82,7 @@ export function AccountDialog({
           </label>
 
           {selectedPlatform && !selectedPlatform.available ? (
-            <p className="account-dialog__note">Preview пока недоступен для этой площадки.</p>
+            <p className="account-dialog__note">Предпросмотр пока недоступен для этой площадки.</p>
           ) : null}
 
           <label className="account-dialog__field">

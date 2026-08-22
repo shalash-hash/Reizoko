@@ -5,6 +5,7 @@ export { PlannedFeature } from './components/PlannedFeature.js';
 export { Sidebar, type SidebarItem } from './components/Sidebar.js';
 export { EmptyState } from './components/EmptyState.js';
 export { SearchInput } from './components/SearchInput.js';
+export { MediaTransformView, type MediaTransformViewTransform } from './components/MediaTransformView.js';
 export { ThemeProvider } from './theme/ThemeProvider.js';
 export { useTheme } from './theme/useTheme.js';
 export {

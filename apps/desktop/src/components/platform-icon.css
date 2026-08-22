@@ -2,9 +2,16 @@
   display: inline-grid;
   place-items: center;
   border-radius: var(--radius-sm);
-  font-weight: 700;
   flex-shrink: 0;
   line-height: 1;
+}
+
+.platform-icon__svg {
+  display: block;
+}
+
+.platform-icon__fallback {
+  font-weight: 700;
 }
 
 .platform-icon--muted {

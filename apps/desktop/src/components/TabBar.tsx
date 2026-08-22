@@ -19,7 +19,8 @@ export function TabBar({ saveStatus }: TabBarProps) {
   const setShowPlatformPicker = useAppStore((s) => s.setShowPlatformPicker);
   const openRevisionHistory = useAppStore((s) => s.openRevisionHistory);
 
-  const savedLabel = saveStatus === 'saving' ? 'Saving…' : saveStatus === 'error' ? 'Error' : 'Saved';
+  const savedLabel =
+    saveStatus === 'saving' ? 'Сохранение…' : saveStatus === 'error' ? 'Ошибка' : 'Сохранено';
 
   return (
     <div className="tab-bar" role="tablist" aria-label="Вкладки рабочего пространства">
@@ -44,7 +45,7 @@ export function TabBar({ saveStatus }: TabBarProps) {
           const account = target.socialAccountId
             ? accounts.find((item) => item.id === target.socialAccountId)
             : null;
-          const label = getPlatformTargetLabel(adapter.name, account);
+          const label = getPlatformTargetLabel(adapter.id, account);
 
           return (
             <div
@@ -53,6 +54,7 @@ export function TabBar({ saveStatus }: TabBarProps) {
               role="tab"
               data-testid={`platform-tab-${target.id}`}
               aria-selected={isActive}
+              data-platform={adapter.id}
               style={{ '--platform-accent': adapter.color } as CSSProperties}
             >
               <button type="button" className="tab-bar__tab-main" onClick={() => void setActiveTab(tabId)}>
@@ -98,7 +100,7 @@ export function TabBar({ saveStatus }: TabBarProps) {
         ) : null}
         <span className="tab-bar__status-pill">
           <span className="tab-bar__status-dot" data-testid="save-status" data-status={saveStatus} />
-          Local • {savedLabel}
+          Локально · {savedLabel}
         </span>
       </div>
     </div>

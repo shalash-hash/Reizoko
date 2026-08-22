@@ -4,7 +4,9 @@ import type {
   ContentItemWithRevision,
   ContentItemSummary,
   CreateSocialAccountInput,
+  MediaTransform,
   PlatformConnection,
+  PlatformPresentationOverrides,
   Publication,
   SocialAccount,
   UpdateSocialAccountInput,
@@ -27,6 +29,7 @@ import {
   removePlatformTarget,
   removeTargetsForAccount,
   toPublicationTarget,
+  upsertMediaTransform,
   type GroupedRevisionHistory,
 } from '@reizoko/core';
 import { platformRegistry } from '@reizoko/platform-sdk';
@@ -50,6 +53,17 @@ import { isSmokeTestMode } from '../config/smoke-test';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { getAllPlatformCatalog } from '../platforms/planned-catalog';
 import { createAppServices } from '../services/app-services';
+import {
+  applyAspectRatio,
+  applyPlatformText,
+  applyTextOverrideMode,
+  buildPresentationByTargetKey,
+  buildPresentationPatch,
+  getOverridesForTarget,
+  loadPresentationOverridesForItem,
+  persistPresentationOverrides,
+  presentationStorageKey,
+} from './presentation-overrides';
 
 function isValidPlatformId(platformId: string): boolean {
   return getAllPlatformCatalog(platformRegistry).some((platform) => platform.id === platformId);
@@ -94,6 +108,8 @@ interface AppState {
   publicationPublishError: string | null;
   publicationResults: PublicationResultSummary[] | null;
   restoreCandidate: { path: string; summary: BackupSummary } | null;
+  presentationOverrides: Record<string, PlatformPresentationOverrides>;
+  activeComposerMediaId: string | null;
 
   initialize: (db: DatabaseContext) => Promise<void>;
   setBlocks: (blocks: ContentBlock[]) => void;
@@ -153,6 +169,36 @@ interface AppState {
   confirmRestoreBackup: () => Promise<void>;
   cancelRestoreBackup: () => void;
   reloadApplicationState: () => Promise<void>;
+  getPresentationOverrides: (
+    platformId: string,
+    socialAccountId?: string | null,
+  ) => PlatformPresentationOverrides | null;
+  setMediaTransform: (
+    platformId: string,
+    socialAccountId: string | null | undefined,
+    transform: MediaTransform,
+  ) => Promise<void>;
+  setAspectRatio: (
+    platformId: string,
+    socialAccountId: string | null | undefined,
+    mediaId: string,
+    aspectRatioId: string,
+  ) => Promise<void>;
+  setTextOverrideMode: (
+    platformId: string,
+    socialAccountId: string | null | undefined,
+    useMasterText: boolean,
+  ) => Promise<void>;
+  setPlatformTextOverride: (
+    platformId: string,
+    socialAccountId: string | null | undefined,
+    text: string,
+  ) => Promise<void>;
+  resetPlatformPresentation: (
+    platformId: string,
+    socialAccountId?: string | null,
+  ) => Promise<void>;
+  selectComposerMedia: (mediaId: string | null) => void;
 }
 
 export type ScreenshotScene =
@@ -172,6 +218,32 @@ export type ScreenshotScene =
   | 'settings-dark';
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let presentationSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function cancelScheduledPresentationSave() {
+  if (presentationSaveTimer) {
+    clearTimeout(presentationSaveTimer);
+    presentationSaveTimer = null;
+  }
+}
+
+function schedulePresentationSave(get: () => AppState) {
+  cancelScheduledPresentationSave();
+  presentationSaveTimer = setTimeout(() => {
+    void persistPresentationOverridesState(get);
+  }, 800);
+}
+
+async function persistPresentationOverridesState(get: () => AppState) {
+  const { db, content, presentationOverrides } = get();
+  if (!db || !content) return;
+  const rows = Object.values(presentationOverrides).filter(
+    (item) => item.contentItemId === content.id,
+  );
+  for (const row of rows) {
+    await persistPresentationOverrides(db, row);
+  }
+}
 
 function cancelScheduledSave() {
   if (saveTimer) {
@@ -225,6 +297,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   telegramConnectionService: null,
   platformConnectionService: null,
   restoreCandidate: null,
+  presentationOverrides: {},
+  activeComposerMediaId: null,
 
   initialize: async (db) => {
     try {
@@ -255,6 +329,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const mediaItems = await db.media.list();
       const mediaPaths = Object.fromEntries(mediaItems.map((m) => [m.id, m.localPath]));
       const accounts = await socialAccountService.listAllAccountsIncludingInactive();
+      const presentationOverrides = await loadPresentationOverridesForItem(db, content.id);
 
       set({
         initialized: true,
@@ -271,6 +346,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         blocks: content.revision.blocks,
         workspace,
         mediaPaths,
+        presentationOverrides,
         themeMode: storedTheme,
       });
 
@@ -487,13 +563,20 @@ export const useAppStore = create<AppState>((set, get) => ({
     if (!db || !contentService) return;
     const content = await contentService.load(id);
     if (!content) return;
+    const presentationOverrides = await loadPresentationOverridesForItem(db, content.id);
     const nextWorkspace = await persistWorkspace(db, {
       ...workspace,
       currentContentItemId: content.id,
       sidebarSection: 'editor',
       activeTabId: 'editor',
     });
-    set({ content, blocks: content.revision.blocks, workspace: nextWorkspace });
+    set({
+      content,
+      blocks: content.revision.blocks,
+      workspace: nextWorkspace,
+      presentationOverrides,
+      activeComposerMediaId: null,
+    });
   },
 
   duplicateContentItem: async (id) => {
@@ -791,15 +874,14 @@ export const useAppStore = create<AppState>((set, get) => ({
       const result = await publicationService.prepareBatch({
         contentItemId: content.id,
         targets: openTargets.map((target) => toPublicationTarget(target)),
+        presentationByTargetKey: buildPresentationByTargetKey(get().presentationOverrides),
       });
 
       const confirmationLabels = openTargets.map((target) => {
-        const platformName =
-          platformRegistry.get(target.platformId)?.adapter.name ?? target.platformId;
         const account = target.socialAccountId
           ? accounts.find((item) => item.id === target.socialAccountId)
           : null;
-        return getPlatformTargetLabel(platformName, account);
+        return getPlatformTargetLabel(target.platformId, account);
       });
 
       set({
@@ -1067,8 +1149,128 @@ export const useAppStore = create<AppState>((set, get) => ({
     const mediaItems = await db.media.list();
     const mediaPaths = Object.fromEntries(mediaItems.map((item) => [item.id, item.localPath]));
     const accounts = await socialAccountService.listAllAccountsIncludingInactive();
-    set({ mediaPaths, accounts });
+    const currentContent = get().content;
+    const presentationOverrides = currentContent
+      ? await loadPresentationOverridesForItem(db, currentContent.id)
+      : {};
+    set({ mediaPaths, accounts, presentationOverrides });
     await get().loadLibrary();
+  },
+
+  getPresentationOverrides: (platformId, socialAccountId) => {
+    const { content, presentationOverrides } = get();
+    return getOverridesForTarget(presentationOverrides, content?.id, platformId, socialAccountId);
+  },
+
+  setMediaTransform: async (platformId, socialAccountId, transform) => {
+    const { content, presentationOverrides } = get();
+    if (!content) return;
+    const existing = getOverridesForTarget(
+      presentationOverrides,
+      content.id,
+      platformId,
+      socialAccountId,
+    );
+    const base = buildPresentationPatch({
+      contentItemId: content.id,
+      platformId,
+      socialAccountId,
+      existing,
+      patch: {},
+    });
+    const next = upsertMediaTransform(base, transform);
+    const storageKey = presentationStorageKey(content.id, next.targetKey);
+    set({
+      presentationOverrides: { ...presentationOverrides, [storageKey]: next },
+    });
+    schedulePresentationSave(get);
+  },
+
+  setAspectRatio: async (platformId, socialAccountId, mediaId, aspectRatioId) => {
+    const { content, presentationOverrides } = get();
+    if (!content) return;
+    const existing = getOverridesForTarget(
+      presentationOverrides,
+      content.id,
+      platformId,
+      socialAccountId,
+    );
+    const base = buildPresentationPatch({
+      contentItemId: content.id,
+      platformId,
+      socialAccountId,
+      existing,
+      patch: {},
+    });
+    const next = applyAspectRatio(base, mediaId, aspectRatioId);
+    const storageKey = presentationStorageKey(content.id, next.targetKey);
+    set({
+      presentationOverrides: { ...presentationOverrides, [storageKey]: next },
+    });
+    schedulePresentationSave(get);
+  },
+
+  setTextOverrideMode: async (platformId, socialAccountId, useMasterText) => {
+    const { content, presentationOverrides } = get();
+    if (!content) return;
+    const existing = getOverridesForTarget(
+      presentationOverrides,
+      content.id,
+      platformId,
+      socialAccountId,
+    );
+    const base = buildPresentationPatch({
+      contentItemId: content.id,
+      platformId,
+      socialAccountId,
+      existing,
+      patch: {},
+    });
+    const next = applyTextOverrideMode(base, useMasterText);
+    const storageKey = presentationStorageKey(content.id, next.targetKey);
+    set({
+      presentationOverrides: { ...presentationOverrides, [storageKey]: next },
+    });
+    schedulePresentationSave(get);
+  },
+
+  setPlatformTextOverride: async (platformId, socialAccountId, text) => {
+    const { content, presentationOverrides } = get();
+    if (!content) return;
+    const existing = getOverridesForTarget(
+      presentationOverrides,
+      content.id,
+      platformId,
+      socialAccountId,
+    );
+    const base = buildPresentationPatch({
+      contentItemId: content.id,
+      platformId,
+      socialAccountId,
+      existing,
+      patch: {},
+    });
+    const next = applyPlatformText(base, text);
+    const storageKey = presentationStorageKey(content.id, next.targetKey);
+    set({
+      presentationOverrides: { ...presentationOverrides, [storageKey]: next },
+    });
+    schedulePresentationSave(get);
+  },
+
+  resetPlatformPresentation: async (platformId, socialAccountId) => {
+    const { db, content, presentationOverrides } = get();
+    if (!db || !content) return;
+    const targetKey = `${platformId}:${socialAccountId ?? ''}`;
+    await db.presentationOverrides.deleteByTarget(content.id, targetKey);
+    const storageKey = presentationStorageKey(content.id, targetKey);
+    const nextMap = { ...presentationOverrides };
+    delete nextMap[storageKey];
+    set({ presentationOverrides: nextMap, activeComposerMediaId: null });
+  },
+
+  selectComposerMedia: (mediaId) => {
+    set({ activeComposerMediaId: mediaId });
   },
 }));
 
