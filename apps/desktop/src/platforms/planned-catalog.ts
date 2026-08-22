@@ -1,5 +1,37 @@
 import type { PlatformAdapter } from '@reizoko/platform-sdk';
 
+export interface GroupedPlatformCatalog {
+  available: PlatformAdapter[];
+  planned: PlatformAdapter[];
+}
+
+function comparePlatformName(a: PlatformAdapter, b: PlatformAdapter): number {
+  return a.name.localeCompare(b.name, 'ru');
+}
+
+export function groupPlatformsByAvailability(platforms: PlatformAdapter[]): GroupedPlatformCatalog {
+  const available: PlatformAdapter[] = [];
+  const planned: PlatformAdapter[] = [];
+
+  for (const platform of platforms) {
+    if (platform.available) {
+      available.push(platform);
+    } else {
+      planned.push(platform);
+    }
+  }
+
+  available.sort(comparePlatformName);
+  planned.sort(comparePlatformName);
+
+  return { available, planned };
+}
+
+export function sortPlatformsByAvailability(platforms: PlatformAdapter[]): PlatformAdapter[] {
+  const { available, planned } = groupPlatformsByAvailability(platforms);
+  return [...available, ...planned];
+}
+
 export const PLANNED_PLATFORMS: PlatformAdapter[] = [
   {
     id: 'facebook',
@@ -107,5 +139,11 @@ export function getAllPlatformCatalog(platformRegistry: {
   const registered = platformRegistry.getCatalog().map((p) => p.adapter);
   const registeredIds = new Set(registered.map((p) => p.id));
   const planned = PLANNED_PLATFORMS.filter((p) => !registeredIds.has(p.id));
-  return [...registered, ...planned];
+  return sortPlatformsByAvailability([...registered, ...planned]);
+}
+
+export function getGroupedPlatformCatalog(platformRegistry: {
+  getCatalog: () => Array<{ adapter: PlatformAdapter }>;
+}): GroupedPlatformCatalog {
+  return groupPlatformsByAvailability(getAllPlatformCatalog(platformRegistry));
 }

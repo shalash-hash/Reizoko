@@ -1,5 +1,6 @@
 import type { ContentItem, ContentRevision } from './content.js';
 import type { MediaItem } from './media.js';
+import type { PlatformConnection } from './platform-connection.js';
 import type { Publication, PublicationBatch } from './publication.js';
 import type { SocialAccount } from './social-account.js';
 import type { WorkspaceState } from './workspace.js';
@@ -18,6 +19,8 @@ export interface ReizokoBackupData {
   contentRevisions: ContentRevision[];
   mediaItems: MediaItem[];
   socialAccounts: SocialAccount[];
+  /** Metadata only — secrets never included; secretRef always null in backup. */
+  platformConnections?: PlatformConnection[];
   publicationBatches: PublicationBatch[];
   publications: Publication[];
   appSettings: AppSettingEntry[];

@@ -52,6 +52,9 @@ export interface Publication {
   scheduledAt?: string | null;
   publishedAt?: string | null;
   remotePostId?: string | null;
+  remoteUrl?: string | null;
+  errorMessage?: string | null;
+  platformResponseMetadata?: Record<string, unknown> | null;
   createdAt: string;
   updatedAt: string;
 }

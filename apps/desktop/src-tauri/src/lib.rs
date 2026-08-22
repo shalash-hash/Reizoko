@@ -1,5 +1,41 @@
 use tauri::WebviewWindowBuilder;
 
+mod credentials;
+use credentials::{
+    delete_secret as delete_credential, get_secret as read_credential, has_secret,
+    set_secret as write_credential,
+};
+
+mod platforms;
+use platforms::telegram::{
+    telegram_connect_bot, telegram_delete_secret, telegram_diagnose_connection,
+    telegram_send_media_group, telegram_send_message, telegram_send_photo, telegram_validate_chat,
+};
+
+#[tauri::command]
+fn set_secret(key: String, value: String) -> Result<(), String> {
+    write_credential(&key, &value)
+}
+
+#[tauri::command]
+fn get_secret(key: String) -> Result<Option<String>, String> {
+    match read_credential(&key) {
+        Ok(value) => Ok(Some(value)),
+        Err(message) if message == "SECRET_MISSING" => Ok(None),
+        Err(message) => Err(message),
+    }
+}
+
+#[tauri::command]
+fn delete_secret(key: String) -> Result<(), String> {
+    delete_credential(&key)
+}
+
+#[tauri::command]
+fn has_secret_command(key: String) -> Result<bool, String> {
+    Ok(has_secret(&key))
+}
+
 const SMOKE_INIT_SCRIPT: &str = r#"
 window.__REIZOKO_SMOKE_TEST__ = true;
 window.__REIZOKO_AUTOMATED_TEST_CONFIG__ = { backgroundLaunch: true };
@@ -51,6 +87,19 @@ pub fn run() {
 
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            set_secret,
+            get_secret,
+            delete_secret,
+            has_secret_command,
+            telegram_connect_bot,
+            telegram_validate_chat,
+            telegram_send_message,
+            telegram_send_photo,
+            telegram_send_media_group,
+            telegram_delete_secret,
+            telegram_diagnose_connection,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

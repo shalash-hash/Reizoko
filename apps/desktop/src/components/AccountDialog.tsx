@@ -4,6 +4,7 @@ import type { CreateSocialAccountInput, SocialAccount } from '@reizoko/shared';
 import { Button, IconButton } from '@reizoko/ui';
 import { X } from 'lucide-react';
 import { PlatformIcon } from './PlatformIcon';
+import { PlatformSelect } from './PlatformSelect';
 import './account-dialog.css';
 
 interface AccountDialogProps {
@@ -72,19 +73,12 @@ export function AccountDialog({
         <div className="account-dialog__body">
           <label className="account-dialog__field">
             <span>Площадка</span>
-            <select
+            <PlatformSelect
+              platforms={platforms}
               value={platformId}
               disabled={Boolean(account)}
-              data-testid="account-platform"
-              onChange={(event) => setPlatformId(event.target.value)}
-            >
-              {platforms.map((platform) => (
-                <option key={platform.id} value={platform.id}>
-                  {platform.name}
-                  {!platform.available ? ' · Preview пока недоступен' : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setPlatformId}
+            />
           </label>
 
           {selectedPlatform && !selectedPlatform.available ? (

@@ -22,17 +22,17 @@
   display: grid;
   place-items: center;
   padding: var(--space-4);
-  background: color-mix(in srgb, var(--bg-overlay) 72%, transparent);
+  background: var(--bg-overlay);
   z-index: 40;
 }
 
 .backup-restore-dialog__panel {
   width: min(100%, 520px);
   padding: var(--space-5);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-modal);
   border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-lg);
+  background: var(--bg-modal);
+  box-shadow: var(--shadow-modal);
 }
 
 .backup-restore-dialog__panel h3 {

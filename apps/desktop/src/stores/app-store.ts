@@ -4,6 +4,8 @@ import type {
   ContentItemWithRevision,
   ContentItemSummary,
   CreateSocialAccountInput,
+  PlatformConnection,
+  Publication,
   SocialAccount,
   UpdateSocialAccountInput,
   WorkspaceState,
@@ -14,6 +16,8 @@ import {
   ContentService,
   PublicationService,
   SocialAccountService,
+  TelegramConnectionService,
+  PlatformConnectionService,
   addPlatformTarget,
   createPlatformTarget,
   getPlatformTargetLabel,
@@ -45,10 +49,16 @@ import {
 import { isSmokeTestMode } from '../config/smoke-test';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { getAllPlatformCatalog } from '../platforms/planned-catalog';
+import { createAppServices } from '../services/app-services';
 
 function isValidPlatformId(platformId: string): boolean {
   return getAllPlatformCatalog(platformRegistry).some((platform) => platform.id === platformId);
 }
+
+export type PublicationResultSummary = Pick<
+  Publication,
+  'id' | 'platformId' | 'status' | 'remotePostId' | 'remoteUrl' | 'errorMessage' | 'publishedAt'
+>;
 
 export type SaveStatus = 'saved' | 'saving' | 'error';
 
@@ -60,6 +70,9 @@ interface AppState {
   contentService: ContentService | null;
   publicationService: PublicationService | null;
   socialAccountService: SocialAccountService | null;
+  telegramConnectionService: TelegramConnectionService | null;
+  platformConnectionService: PlatformConnectionService | null;
+  connections: PlatformConnection[];
   accounts: SocialAccount[];
   content: ContentItemWithRevision | null;
   blocks: ContentBlock[];
@@ -76,6 +89,10 @@ interface AppState {
   restoreCandidateId: string | null;
   publicationPrepareConfirmation: string[] | null;
   publicationPrepareError: string | null;
+  lastPreparedBatchId: string | null;
+  publishing: boolean;
+  publicationPublishError: string | null;
+  publicationResults: PublicationResultSummary[] | null;
   restoreCandidate: { path: string; summary: BackupSummary } | null;
 
   initialize: (db: DatabaseContext) => Promise<void>;
@@ -113,6 +130,18 @@ interface AppState {
   cancelRestoreRevision: () => void;
   fetchRevision: (revisionId: string) => Promise<ContentItemWithRevision['revision'] | null>;
   preparePublicationBatch: () => Promise<void>;
+  publishNowBatch: () => Promise<void>;
+  retryPublication: (publicationId: string) => Promise<void>;
+  dismissPublicationResults: () => void;
+  refreshPublicationResults: () => Promise<void>;
+  getLatestBatchPublishStatuses: () => Promise<
+    Awaited<ReturnType<PublicationService['assessBatchPublishability']>>
+  >;
+  loadConnections: () => Promise<void>;
+  connectTelegramBot: (token: string, existingConnectionId?: string | null) => Promise<void>;
+  addTelegramDestination: (connectionId: string, chatRef: string) => Promise<void>;
+  disconnectConnection: (connectionId: string) => Promise<void>;
+  linkAccountToConnection: (accountId: string, connectionId: string) => Promise<void>;
   dismissPublicationConfirmation: () => void;
   getPublicationState: () => Promise<{
     batches: Awaited<ReturnType<PublicationService['listBatchesByContentItem']>>;
@@ -188,21 +217,24 @@ export const useAppStore = create<AppState>((set, get) => ({
   restoreCandidateId: null,
   publicationPrepareConfirmation: null,
   publicationPrepareError: null,
+  lastPreparedBatchId: null,
+  publishing: false,
+  publicationPublishError: null,
+  publicationResults: null,
+  connections: [],
+  telegramConnectionService: null,
+  platformConnectionService: null,
   restoreCandidate: null,
 
   initialize: async (db) => {
     try {
       const contentService = new ContentService(db.content);
-      const publicationService = new PublicationService(
-        db.content,
-        db.publicationBatches,
-        db.publications,
-        platformRegistry,
-      );
+      const services = createAppServices(db);
       const socialAccountService = new SocialAccountService(
         db.socialAccounts,
         isValidPlatformId,
       );
+      const connections = await db.platformConnections.listAll();
 
       let workspace = await db.workspace.getState();
       const storedTheme = await db.settings.get<ThemeMode>(THEME_SETTINGS_KEY, readStoredThemeMode());
@@ -229,8 +261,11 @@ export const useAppStore = create<AppState>((set, get) => ({
         loading: false,
         db,
         contentService,
-        publicationService,
+        publicationService: services.publicationService,
         socialAccountService,
+        telegramConnectionService: services.telegramConnectionService,
+        platformConnectionService: services.platformConnectionService,
+        connections,
         accounts,
         content,
         blocks: content.revision.blocks,
@@ -772,6 +807,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         blocks: result.item.revision.blocks,
         publicationPrepareConfirmation: confirmationLabels,
         publicationPrepareError: null,
+        lastPreparedBatchId: result.batch.id,
         saveStatus: 'saved',
       });
     } catch (error) {
@@ -780,6 +816,134 @@ export const useAppStore = create<AppState>((set, get) => ({
           error instanceof Error ? error.message : 'Не удалось подготовить публикацию',
       });
     }
+  },
+
+  publishNowBatch: async () => {
+    const { publicationService, lastPreparedBatchId, mediaPaths } = get();
+    if (!publicationService || !lastPreparedBatchId) {
+      set({ publicationPublishError: 'Сначала подготовьте публикацию.' });
+      return;
+    }
+    set({ publishing: true, publicationPublishError: null });
+    try {
+      const statuses = await publicationService.assessBatchPublishability(lastPreparedBatchId);
+      const publishableIds = statuses.filter((status) => status.publishable).map((s) => s.publicationId);
+      if (publishableIds.length === 0) {
+        set({ publicationPublishError: 'Нет готовых Telegram-целей для публикации.' });
+        return;
+      }
+      await publicationService.publishBatchNow(lastPreparedBatchId, mediaPaths, {
+        publicationIds: publishableIds,
+      });
+      const publications = await publicationService.listPublicationsByBatch(lastPreparedBatchId);
+      set({
+        publicationPrepareConfirmation: ['Telegram'],
+        publicationPublishError: null,
+        publicationResults: publications.map(toPublicationResultSummary),
+      });
+    } catch (error) {
+      set({
+        publicationPublishError:
+          error instanceof Error ? error.message : 'Не удалось опубликовать.',
+      });
+    } finally {
+      set({ publishing: false });
+    }
+  },
+
+  retryPublication: async (publicationId: string) => {
+    const { publicationService, mediaPaths, lastPreparedBatchId } = get();
+    if (!publicationService) return;
+    set({ publishing: true, publicationPublishError: null });
+    try {
+      await publicationService.retryPublication(publicationId, mediaPaths);
+      if (lastPreparedBatchId) {
+        const publications = await publicationService.listPublicationsByBatch(lastPreparedBatchId);
+        set({ publicationResults: publications.map(toPublicationResultSummary) });
+      }
+    } catch (error) {
+      set({
+        publicationPublishError:
+          error instanceof Error ? error.message : 'Не удалось повторить публикацию.',
+      });
+    } finally {
+      set({ publishing: false });
+    }
+  },
+
+  dismissPublicationResults: () => {
+    set({ publicationResults: null, publicationPublishError: null });
+  },
+
+  refreshPublicationResults: async () => {
+    const { publicationService, lastPreparedBatchId } = get();
+    if (!publicationService || !lastPreparedBatchId) return;
+    const publications = await publicationService.listPublicationsByBatch(lastPreparedBatchId);
+    set({ publicationResults: publications.map(toPublicationResultSummary) });
+  },
+
+  getLatestBatchPublishStatuses: async () => {
+    const { publicationService, lastPreparedBatchId } = get();
+    if (!publicationService || !lastPreparedBatchId) return [];
+    return publicationService.assessBatchPublishability(lastPreparedBatchId);
+  },
+
+  loadConnections: async () => {
+    const { db, telegramConnectionService } = get();
+    if (!db) return;
+    const raw = await db.platformConnections.listAll();
+    const connections = telegramConnectionService
+      ? await telegramConnectionService.verifyAllConnectionsHealth(raw)
+      : raw;
+    set({ connections });
+  },
+
+  connectTelegramBot: async (token: string, existingConnectionId?: string | null) => {
+    const { telegramConnectionService, db } = get();
+    if (!telegramConnectionService || !db) throw new Error('Сервис подключений недоступен');
+    await telegramConnectionService.connectBot(token, existingConnectionId);
+    await get().loadConnections();
+  },
+
+  addTelegramDestination: async (connectionId: string, chatRef: string) => {
+    const { telegramConnectionService, db, socialAccountService } = get();
+    if (!telegramConnectionService || !db || !socialAccountService) {
+      throw new Error('Сервис подключений недоступен');
+    }
+    const connection = await db.platformConnections.getById(connectionId);
+    if (!connection) throw new Error('Подключение не найдено');
+    const validation = await telegramConnectionService.validateDestination(connection, chatRef);
+    if (!validation.canPublish) {
+      throw new Error(validation.reason ?? 'TELEGRAM_PERMISSION_DENIED');
+    }
+    const handle = validation.chat.username ? `@${validation.chat.username}` : null;
+    await socialAccountService.createAccount({
+      platformId: 'telegram',
+      displayName: validation.chat.title ?? chatRef,
+      handle,
+      connectionId,
+      externalAccountId: String(validation.chat.id),
+    });
+    await get().loadAccounts();
+  },
+
+  disconnectConnection: async (connectionId: string) => {
+    const { telegramConnectionService, db } = get();
+    if (!telegramConnectionService || !db) return;
+    await telegramConnectionService.disconnect(connectionId);
+    await db.socialAccounts.clearConnectionForAccounts(connectionId);
+    await get().loadConnections();
+    await get().loadAccounts();
+  },
+
+  linkAccountToConnection: async (accountId: string, connectionId: string) => {
+    const { socialAccountService } = get();
+    if (!socialAccountService) return;
+    await socialAccountService.updateAccount(accountId, {
+      connectionId,
+      connectionState: 'connected',
+    });
+    await get().loadAccounts();
   },
 
   dismissPublicationConfirmation: () => {
@@ -919,4 +1083,16 @@ export function resolveActivePlatformTarget(workspace: WorkspaceState) {
   const targetId = parsePlatformTabId(workspace.activeTabId);
   if (!targetId) return null;
   return workspace.openPlatformTargets.find((target) => target.id === targetId) ?? null;
+}
+
+function toPublicationResultSummary(publication: Publication): PublicationResultSummary {
+  return {
+    id: publication.id,
+    platformId: publication.platformId,
+    status: publication.status,
+    remotePostId: publication.remotePostId ?? null,
+    remoteUrl: publication.remoteUrl ?? null,
+    errorMessage: publication.errorMessage ?? null,
+    publishedAt: publication.publishedAt ?? null,
+  };
 }

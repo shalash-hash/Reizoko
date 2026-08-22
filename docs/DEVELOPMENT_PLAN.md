@@ -2,7 +2,7 @@
 
 > Нумерованная дорожная карта с актуальными статусами.  
 > Главный контекст: [MASTER_CONTEXT.md](./MASTER_CONTEXT.md)  
-> Актуализирован: **22 августа 2026** (закрытие Stage 1 — 1.21).
+> Актуализирован: **22 августа 2026** (старт Stage 1.5 — Connected & Publishing Desktop).
 
 ## Легенда статусов
 
@@ -21,13 +21,19 @@
 
 | | ID | Задача |
 |---|-----|--------|
-| ✅ | **Stage 1** | Local Desktop — **COMPLETE** |
-| ➡️ | **2.1** | Web browser client (planning not started) |
+| ✅ | **Stage 1** | Local Desktop — **COMPLETE** (baseline `v0.1.0-stage1`) |
+| 🟡 | **Stage 1.5** | Connected & Publishing Desktop — **CURRENT** (1.5.1–1.5.4 ✅) |
+| ⬜ | **Stage 2** | Web / Cloud Sync — **DEFERRED** |
+| ⬜ | **Stage 3** | Server Automation — **DEFERRED** |
 
 ```text
-Stage:    1 — Local Desktop ✅ COMPLETE
-Next:     Stage 2 — planning not started
+STAGE 1   — Local Desktop                    ✅ COMPLETE
+STAGE 1.5 — Connected & Publishing Desktop   🟡 CURRENT
+STAGE 2   — Web / Cloud Sync                 DEFERRED — не входит в текущий план
+STAGE 3   — Server Automation                DEFERRED — не входит в текущий план
 ```
+
+**Current product goal:** полностью функциональный standalone Windows desktop Reizoko — реальные аккаунты, локальная авторизация, публикация, scheduler и очередь **без собственного backend**.
 
 ---
 
@@ -322,9 +328,57 @@ Stage 1 считается **завершённым** — все blocking criter
 - [x] Final Stage 1 sign-off checklist (`pnpm stage1:acceptance`)
 - [x] Chained smoke orchestrator — deterministic process isolation
 
+**Baseline tag:** `v0.1.0-stage1` — не изменять.
+
 ---
 
-# STAGE 2 — Web + Shared Hosting + Sync
+# STAGE 1.5 — Connected & Publishing Desktop 🟡 CURRENT
+
+Цель: полностью функциональный Windows desktop — подключение реальных аккаунтов, безопасное локальное хранение авторизации, публикация через официальные API, локальный scheduler и очередь. **Без собственного backend.**
+
+Исследование платформ: [platform-connections/README.md](./platform-connections/README.md)
+
+| ID | Задача | Статус | Notes |
+|----|--------|--------|-------|
+| 1.5.1 | Platform Connection Research & Architecture | ✅ DONE | IG/TG/VK docs + contracts |
+| 1.5.2 | Secure Credential Infrastructure | ✅ DONE | SecretStore, Windows Credential Manager, migration v5 |
+| 1.5.3 | Account Connection UI | ✅ DONE | Telegram connect/destination dialogs, hierarchy |
+| 1.5.4 | Telegram Bot Connection & Publishing | ✅ DONE | Bot API, real publish, smoke:telegram |
+| 1.5.5 | VK Connection | ➡️ NEXT | VK ID OAuth + community token |
+| 1.5.6 | Instagram / Meta Connection | ⬜ PLANNED | Business/Creator, Meta App Review |
+| 1.5.7 | Local Publisher Engine | ⬜ PLANNED | `PlatformPublisher` implementations |
+| 1.5.8 | Publish Now UX | ⬜ PLANNED | Real HTTP publish from desktop |
+| 1.5.9 | Publication Result / Retry / Remote Links | ⬜ PLANNED | `remotePostId`, `remoteUrl` |
+| 1.5.10 | Local Scheduler | ⬜ PLANNED | Schedule while PC on |
+| 1.5.11 | Natural Time / Exact Time execution | ⬜ PLANNED | Uses shared utils |
+| 1.5.12 | Local Background Queue | ⬜ PLANNED | In-process queue, no Redis |
+| 1.5.13 | Recurring / Evergreen Local Publishing | ⬜ PLANNED | Desktop-only recurrence |
+| 1.5.14 | Connected Desktop Acceptance | ⬜ PLANNED | End-to-end gate |
+
+### 1.5.1 Platform Connection Research & Architecture
+
+- Официальная документация: authentication, authorization, publishing, media upload, refresh, revoke.
+- `PlatformConnectionProvider` — platform-independent contract.
+- `ConnectionMethod` — не единый login flow для всех платформ.
+- System browser OAuth: loopback callback / custom URI scheme (`reizoko://`).
+- `MediaDeliveryMode` — direct_binary, multipart, platform_upload_session, public_url.
+- Desktop-only blocker model (`requiresPublicMediaUrl`, feasibility labels).
+
+### 1.5.2 Secure Credential Infrastructure
+
+- `SecretStore` interface — вне SQLite domain repository.
+- Windows: Credential Manager via Tauri `keyring`.
+- `PlatformConnection` entity — `secretRef` only, never token value.
+- Migration v5: `platform_connections` table.
+- Backup rule: `.reizoko-backup` **не содержит** tokens; restore → `needs_reconnect`.
+- Log redaction: `***REDACTED***`.
+- Password rule: Reizoko **не сохраняет** пароли IG/VK/Telegram.
+
+---
+
+# STAGE 2 — Web + Shared Hosting + Sync ⬜ DEFERRED
+
+> **DEFERRED** — не входит в текущий план разработки. Сохранено в долгосрочной дорожной карте.
 
 Цель: работа из браузера, cloud library, Desktop ↔ Cloud sync на shared hosting.
 
@@ -350,9 +404,11 @@ Stage 1 считается **завершённым** — все blocking criter
 
 ---
 
-# STAGE 3 — VPS + Automation
+# STAGE 3 — VPS + Automation ⬜ DEFERRED
 
-Цель: автоматическая публикация, OAuth, scheduler, background workers.
+> **DEFERRED** — не входит в текущий план разработки. Часть задач (OAuth, publishing, scheduler) переносится в Stage 1.5 как **локальный desktop** вариант.
+
+Цель: автоматическая публикация при выключенном ПК, server workers, cloud queue.
 
 | ID | Задача | Статус |
 |----|--------|--------|
@@ -384,9 +440,9 @@ Stage 1 считается **завершённым** — все blocking criter
 
 | ID | Platform | Preview | API Publish | Status |
 |----|----------|---------|-------------|--------|
-| P.1 | Instagram | ✅ Stage 1 | ⬜ Stage 3 | Active |
-| P.2 | Telegram | ✅ Stage 1 | ⬜ Stage 3 | Active |
-| P.3 | VK | ✅ Stage 1 | ⬜ Stage 3 | Active |
+| P.1 | Instagram | ✅ Stage 1 | ⬜ Stage 1.5 | Active — requires public media URL |
+| P.2 | Telegram | ✅ Stage 1 | ⬜ Stage 1.5 | Active — Bot API recommended first |
+| P.3 | VK | ✅ Stage 1 | ⬜ Stage 1.5 | Active — VK ID OAuth |
 | P.4 | Facebook | ⬜ Catalog | ⬜ Stage 3+ | Planned |
 | P.5 | Threads | ⬜ Catalog | ⬜ Stage 3+ | Planned |
 | P.6 | X | ⬜ Catalog | ⬜ Stage 3+ | Planned |
@@ -410,7 +466,11 @@ Stage 1 считается **завершённым** — все blocking criter
 # Рекомендуемая последовательность после текущего фокуса
 
 ```text
-1.21  Stage 1 completion gate (✅ DONE)
+1.21  Stage 1 completion gate (✅ DONE, tag v0.1.0-stage1)
   ↓
-2.x   Stage 2 planning & implementation (NOT STARTED)
+1.5.x Connected & Publishing Desktop (🟡 CURRENT)
+  ↓
+2.x   Web / Cloud Sync (DEFERRED)
+  ↓
+3.x   Server Automation (DEFERRED)
 ```

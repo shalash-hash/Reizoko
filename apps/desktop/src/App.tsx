@@ -92,6 +92,12 @@ export function App() {
       removeAccount: (id) => useAppStore.getState().removeAccount(id),
       setTheme: (mode) => useAppStore.getState().setThemeMode(mode),
       preparePublication: () => useAppStore.getState().preparePublicationBatch(),
+      connectTelegramBot: (token: string, connectionId?: string | null) =>
+        useAppStore.getState().connectTelegramBot(token, connectionId),
+      addTelegramDestination: (connectionId: string, chatRef: string) =>
+        useAppStore.getState().addTelegramDestination(connectionId, chatRef),
+      publishNow: () => useAppStore.getState().publishNowBatch(),
+      getConnections: () => useAppStore.getState().connections,
       getPublicationState: () => useAppStore.getState().getPublicationState(),
       getAccounts: () => useAppStore.getState().accounts,
       setTitle: (title) => useAppStore.getState().setTitle(title),

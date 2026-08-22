@@ -2,9 +2,22 @@
 
 > **Главный документ контекста проекта.**  
 > Передаётся новому AI-агенту или разработчику без истории предыдущих обсуждений.  
-> Актуализирован по аудиту репозитория: **21 августа 2026**.
+> Актуализирован: **22 августа 2026** (старт Stage 1.5 — Connected & Publishing Desktop).
 
 См. также: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md) · [ROADMAP.md](./ROADMAP.md)
+
+---
+
+## Current Goal
+
+```text
+Complete standalone Windows desktop Reizoko.
+
+Web / Cloud / Server development: DEFERRED.
+```
+
+**Stage 1 baseline:** `v0.1.0-stage1` — Local Desktop ✅ COMPLETE.  
+**Current stage:** Stage 1.5 — Connected & Publishing Desktop 🟡
 
 ---
 
@@ -71,7 +84,7 @@ Publication[]  (по одной на platformId + socialAccountId)
 
 ## 3. Архитектурные этапы
 
-### STAGE 1 — Local Desktop *(текущий основной этап)*
+### STAGE 1 — Local Desktop ✅ COMPLETE
 
 | Аспект | Решение |
 |--------|---------|
@@ -81,13 +94,31 @@ Publication[]  (по одной на platformId + socialAccountId)
 | Медиа | Локальная медиатека в App Data |
 | Сервер | **Не требуется** — полностью автономная работа |
 
-**Цель Stage 1:** полноценный локальный workflow создания контента, preview, библиотеки и сохранения workspace.
-
-**Не в scope Stage 1:** реальные API соцсетей, cloud sync, серверный scheduler.
+**Цель Stage 1 достигнута:** локальный workflow создания контента, preview, библиотеки, persistence, production build.  
+**Baseline tag:** `v0.1.0-stage1`
 
 ---
 
-### STAGE 2 — Web + Shared Hosting + Sync *(будущее)*
+### STAGE 1.5 — Connected & Publishing Desktop 🟡 CURRENT
+
+| Аспект | Решение |
+|--------|---------|
+| Авторизация | Официальные API flows per platform (OAuth, bot token, …) |
+| Secrets | Windows Credential Manager (`SecretStore`), не SQLite |
+| Публикация | Локальный `PlatformPublisher` из desktop |
+| Scheduler | Локальный, пока ПК включён |
+| Очередь | In-process local queue (без Redis/BullMQ) |
+| Backend | **Не требуется** |
+
+**Цель Stage 1.5:** реальные аккаунты, публикация, scheduler, история — pure desktop.
+
+Platform research: [platform-connections/](./platform-connections/README.md)
+
+---
+
+### STAGE 2 — Web + Shared Hosting + Sync ⬜ DEFERRED
+
+> Не входит в текущий план разработки.
 
 - Browser client (`apps/web`)
 - Cloud repository
@@ -102,7 +133,9 @@ Publication[]  (по одной на platformId + socialAccountId)
 
 ---
 
-### STAGE 3 — VPS + Automation *(будущее)*
+### STAGE 3 — VPS + Automation ⬜ DEFERRED
+
+> Не входит в текущий план разработки. Server-side scheduler/queue отложены; desktop publishing реализуется в Stage 1.5.
 
 - NestJS API
 - PostgreSQL
@@ -322,33 +355,54 @@ Stage 3 Publisher позже преобразует snapshot в конкретн
 
 ### SocialAccount
 
-Локальный профиль цели публикации (не OAuth-подключение на Stage 1).
+Профиль цели публикации (destination). Может быть локальным или привязанным к `PlatformConnection`.
 
 | Поле | Назначение |
 |------|------------|
 | `id`, `platformId`, `displayName` | Идентификация профиля |
 | `handle?` | `@username` для UI |
-| `externalAccountId?` | Будущее сопоставление с OAuth (Stage 3), сейчас обычно `null` |
+| `connectionId?` | Ссылка на credential (`PlatformConnection.id`); `null` = локальный профиль |
+| `externalAccountId?` | Remote id (например Telegram chat id) |
 | `avatarMediaId?` | Опциональный avatar через MediaItem |
 | `isActive` | Активен ли профиль как новая target |
-| `connectionState` | `local` \| `connected` \| `needs_reconnect` — на Stage 1 только `local` |
+| `connectionState` | UI projection: `local` \| `connected` \| `needs_reconnect` — source of truth: `PlatformConnection.state` |
 | `createdAt`, `updatedAt`, `deletedAt?` | Timestamps + soft delete |
 
-**Security Stage 1:** только публичные/локальные metadata. **Никаких** access token, refresh token, password, cookies, API secret.
+**Security:** secrets не хранятся в SocialAccount. Token/session — только в Credential Manager через `secretRef` на connection.
 
-**UX:** локальный профиль показывается как «Локальный профиль», не «Подключён».
+**UX:** локальный профиль — «Локальный профиль»; connected destination — «Подключён» + «через @bot».
 
-**Статус Stage 1.13:** migration v4, repository, service, AccountsView, account-aware tabs/picker/previews, publication targets с `socialAccountId`.
+**Статус:** migration v4 (local profiles), v6 (`connectionId`). Telegram Bot API — первое реальное подключение (Stage 1.5.4).
 
 ```text
-Platform
-   ↓
-SocialAccount[]
-   ↓
+PlatformConnection (credential, 1 bot token)
+        ↑
+SocialAccount[] (destinations: channels/chats)
+        ↓
 PublicationTarget (platformId + socialAccountId)
-   ↓
+        ↓
 Publication
 ```
+
+### PlatformConnection
+
+Credential / authenticated identity (например Telegram Bot `@mybot`).
+
+| Поле | Назначение |
+|------|------------|
+| `id`, `platformId`, `method` | Идентификация (`bot_token`, …) |
+| `state` | `connected` \| `needs_reconnect` \| … — **source of truth** для publishability |
+| `secretRef` | Ссылка на secret в Credential Manager (не plaintext) |
+
+**Invariant:** `PlatformConnection` не может оставаться `connected`, если соответствующий credential в SecretStore отсутствует. При обнаружении рассинхрона состояние переводится в `needs_reconnect`, но `secretRef` сохраняется для стабильного ключа credential.
+
+**Credential persistence:** Platform credentials в OS secure storage (Windows Credential Manager) хранятся **бессрочно** до явного disconnect, физического удаления credential, переноса на другой компьютер (backup без secrets) или подтверждённой недействительности token. Reizoko **не использует** произвольные TTL (1/7/30 дней). Обычные ошибки destination/network/publish **не удаляют** bot token.
+
+**Credential namespace (Windows):** service `reizoko`, storage key = dot-форма `secretRef` (`connection.{id}.bot_token`). Одинаков для `tauri dev` и release build — пересборка не меняет namespace.
+| `externalIdentityId?`, `displayName?`, `handle?` | Public bot identity |
+| `connectedAt`, `lastValidatedAt`, `errorCode?`, `errorMessage?` | Connection lifecycle |
+
+**Статус:** migration v5 (foundation), v6 (убрана 1:1 связь с `social_account_id`; destinations ссылаются на connection через `SocialAccount.connectionId`).
 
 ### MediaItem
 
@@ -548,14 +602,16 @@ interface PlatformDefinition {
 | Validation | Max 2200 chars, heading → warning, multi-image → info |
 | Capabilities | maxTextLength 2200, maxImages 10, no headings |
 
-### Telegram *(available)*
+### Telegram *(available + connected publishing)*
 
 | Аспект | Реализация |
 |--------|------------|
 | Adapter | `platforms/telegram/src/TelegramAdapter.ts` |
 | Preview | `TelegramPreview.tsx` — chat bubble style |
-| Transform | Headings → `<b>`, HTML formatting |
+| Transform | Headings → `<b>`, HTML formatting (`parse_mode=HTML` при publish) |
 | Validation | Max 4096 chars |
+| Connection | Bot API via Tauri native transport; token в Credential Manager |
+| Publishing | `TelegramPublisher` — `sendMessage` / `sendPhoto` / `sendMediaGroup` |
 | Capabilities | headings, links, multiple images |
 
 ### VK *(available)*
@@ -743,13 +799,15 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | Revision history UI | DONE | Drawer: list, preview, restore, manual checkpoint |
 | Publication local architecture | DONE | Migration v3, batch, snapshots, prepare UI |
 | Social accounts UI | ✅ DONE | AccountsView + local profiles (Stage 1.13) |
-| Publish now / Schedule | PLANNED STAGE 3 | Disabled «скоро» in dropdown |
+| Platform connections | ✅ DONE | v5/v6, Credential Manager, Telegram Bot API (Stage 1.5.2–1.5.4) |
+| Telegram publish now | ✅ DONE | Real Bot API publish for connected destinations (Stage 1.5.4) |
+| Publish now (IG/VK) | PLANNED | Disabled «скоро» until platform connection |
 | Calendar / History / Analytics | PLANNED STAGE 2/3 | PlannedFeature placeholders |
 | Cloud sync | PLANNED STAGE 2 | |
 | Web client | PLANNED STAGE 2 | |
 | Server scheduler | PLANNED STAGE 3 | Natural/Exact time modeled |
 | OAuth + API publishing | PLANNED STAGE 3 | |
-| Automated tests | ✅ DONE | 67 vitest + smoke suite + `pnpm stage1:acceptance` (Stage 1.14–1.21) |
+| Automated tests | ✅ DONE | 90 vitest + smoke suite + `pnpm smoke:telegram` + `pnpm stage1:acceptance` |
 | Backup/export | ✅ DONE | `.reizoko-backup` + JSON export + restore (Stage 1.14) |
 | Production EXE build | DONE | Windows release build verified |
 | docs/screenshots | DONE | 14 PNG files |

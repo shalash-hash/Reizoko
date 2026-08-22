@@ -26,7 +26,8 @@
     "smoke:publication": "node scripts/smoke/publication-draft.mjs",
     "smoke:accounts": "node scripts/smoke/accounts.mjs",
     "smoke:backup": "node scripts/smoke/backup-restore.mjs",
-    "smoke:clean-start": "node scripts/smoke/clean-start.mjs"
+    "smoke:clean-start": "node scripts/smoke/clean-start.mjs",
+    "smoke:telegram": "node scripts/smoke/telegram.mjs"
   },
   "devDependencies": {
     "playwright": "^1.51.0",

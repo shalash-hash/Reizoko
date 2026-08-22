@@ -9,6 +9,7 @@ import {
 } from '@reizoko/platform-sdk';
 import { createBlock } from '../../../core/src/content/content-service.js';
 import { PublicationService } from '../../../core/src/publication/publication-service.js';
+import { FakeTelegramTransport } from '../../../core/src/telegram/fake-telegram-transport.js';
 import { bootstrapDatabase } from '../bootstrap.js';
 import { MemoryDatabaseClient } from '../test/memory-database-client.js';
 import { runMigrations, MIGRATIONS } from '../migrations/index.js';
@@ -72,6 +73,9 @@ async function createPublicationTestContext() {
     db.publicationBatches,
     db.publications,
     registry,
+    db.socialAccounts,
+    db.platformConnections,
+    new FakeTelegramTransport(),
   );
 
   return { client, db, service };

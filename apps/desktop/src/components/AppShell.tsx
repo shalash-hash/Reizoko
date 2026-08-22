@@ -107,7 +107,14 @@ export function AppShell() {
   const showRevisionHistory = useAppStore((s) => s.showRevisionHistory);
   const publicationPrepareConfirmation = useAppStore((s) => s.publicationPrepareConfirmation);
   const preparePublicationBatch = useAppStore((s) => s.preparePublicationBatch);
+  const publishNowBatch = useAppStore((s) => s.publishNowBatch);
+  const publishing = useAppStore((s) => s.publishing);
+  const lastPreparedBatchId = useAppStore((s) => s.lastPreparedBatchId);
+  const publicationPublishError = useAppStore((s) => s.publicationPublishError);
+  const publicationResults = useAppStore((s) => s.publicationResults);
   const dismissPublicationConfirmation = useAppStore((s) => s.dismissPublicationConfirmation);
+  const retryPublication = useAppStore((s) => s.retryPublication);
+  const dismissPublicationResults = useAppStore((s) => s.dismissPublicationResults);
 
   const prepareState = getPreparePublicationState(blocks, workspace.openPlatformTargets);
   const activeTarget = resolveActivePlatformTarget(workspace);
@@ -219,6 +226,16 @@ export function AppShell() {
               prepareConfirmation={publicationPrepareConfirmation}
               onPreparePublication={() => void preparePublicationBatch()}
               onDismissConfirmation={dismissPublicationConfirmation}
+              canPublishNow={Boolean(lastPreparedBatchId)}
+              publishNowDisabledReason={
+                lastPreparedBatchId ? undefined : 'Сначала подготовьте публикацию'
+              }
+              publishing={publishing}
+              onPublishNow={() => void publishNowBatch()}
+              publicationPublishError={publicationPublishError}
+              publicationResults={publicationResults}
+              onRetryPublication={(id) => void retryPublication(id)}
+              onDismissPublicationResults={dismissPublicationResults}
             />
           )}
         </div>

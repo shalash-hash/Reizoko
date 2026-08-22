@@ -18,6 +18,7 @@ interface SocialAccountRow {
   handle: string | null;
   external_account_id: string | null;
   avatar_media_id: string | null;
+  connection_id: string | null;
   connected_at: string;
   created_at: string | null;
   updated_at: string | null;
@@ -37,28 +38,32 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       platformId: input.platformId,
       displayName: input.displayName.trim(),
       handle: input.handle?.trim() || null,
-      externalAccountId: null,
+      externalAccountId: input.externalAccountId ?? null,
       avatarMediaId: input.avatarMediaId ?? null,
+      connectionId: input.connectionId ?? null,
       isActive: true,
-      connectionState: 'local',
+      connectionState: input.connectionId ? 'connected' : 'local',
       createdAt: now,
       updatedAt: now,
     };
 
     await this.db.execute(
       `INSERT INTO social_accounts
-       (id, platform_id, display_name, handle, external_account_id, avatar_media_id,
+       (id, platform_id, display_name, handle, external_account_id, avatar_media_id, connection_id,
         connected_at, created_at, updated_at, deleted_at, is_active, connection_state)
-       VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, NULL, 1, 'local')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?)`,
       [
         id,
         account.platformId,
         account.displayName,
         account.handle,
+        account.externalAccountId,
         account.avatarMediaId,
+        account.connectionId,
         now,
         now,
         now,
+        account.connectionState,
       ],
     );
 
@@ -110,12 +115,29 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       input.handle !== undefined ? input.handle?.trim() || null : existing.handle ?? null;
     const avatarMediaId =
       input.avatarMediaId !== undefined ? input.avatarMediaId : existing.avatarMediaId ?? null;
+    const connectionId =
+      input.connectionId !== undefined ? input.connectionId : existing.connectionId ?? null;
+    const externalAccountId =
+      input.externalAccountId !== undefined
+        ? input.externalAccountId
+        : existing.externalAccountId ?? null;
+    const connectionState = input.connectionState ?? existing.connectionState;
 
     await this.db.execute(
       `UPDATE social_accounts
-       SET display_name = ?, handle = ?, avatar_media_id = ?, updated_at = ?
+       SET display_name = ?, handle = ?, avatar_media_id = ?, connection_id = ?,
+           external_account_id = ?, connection_state = ?, updated_at = ?
        WHERE id = ?`,
-      [displayName, handle, avatarMediaId, now, id],
+      [
+        displayName,
+        handle,
+        avatarMediaId,
+        connectionId,
+        externalAccountId,
+        connectionState,
+        now,
+        id,
+      ],
     );
 
     const updated = await this.getById(id, { includeDeleted: true });
@@ -166,6 +188,24 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
     return (result.rows[0]?.count ?? 0) > 0;
   }
 
+  async listByConnectionId(connectionId: string): Promise<SocialAccount[]> {
+    const result = await this.db.select<SocialAccountRow>(
+      `SELECT * FROM social_accounts WHERE connection_id = ? AND deleted_at IS NULL ORDER BY created_at ASC`,
+      [connectionId],
+    );
+    return result.rows.map((row) => this.rowToAccount(row));
+  }
+
+  async clearConnectionForAccounts(connectionId: string): Promise<void> {
+    const now = nowIso();
+    await this.db.execute(
+      `UPDATE social_accounts
+       SET connection_state = 'needs_reconnect', updated_at = ?
+       WHERE connection_id = ? AND deleted_at IS NULL`,
+      [now, connectionId],
+    );
+  }
+
   private rowToAccount(row: SocialAccountRow): SocialAccount {
     return {
       id: row.id,
@@ -174,6 +214,7 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       handle: row.handle,
       externalAccountId: row.external_account_id,
       avatarMediaId: row.avatar_media_id,
+      connectionId: row.connection_id,
       isActive: row.is_active === 1,
       connectionState: (row.connection_state as SocialAccount['connectionState']) ?? 'local',
       createdAt: row.created_at ?? row.connected_at,

@@ -6,6 +6,7 @@ import {
   BackupService,
   PublicationService,
   SocialAccountService,
+  FakeTelegramTransport,
   createBlock,
   packBackupArchive,
   parseBackupArchive,
@@ -53,6 +54,9 @@ async function createFixture() {
     db.publicationBatches,
     db.publications,
     registry,
+    db.socialAccounts,
+    db.platformConnections,
+    new FakeTelegramTransport(),
   );
   const socialAccountService = new SocialAccountService(db.socialAccounts, () => true);
   const mediaDir = await mkdtemp(join(tmpdir(), 'reizoko-backup-test-'));

@@ -18,4 +18,6 @@ export interface SocialAccountRepository {
   setActive(id: string, isActive: boolean): Promise<SocialAccount>;
   softDelete(id: string): Promise<SocialAccount>;
   isReferencedByPublications(id: string): Promise<boolean>;
+  listByConnectionId(connectionId: string): Promise<SocialAccount[]>;
+  clearConnectionForAccounts(connectionId: string): Promise<void>;
 }

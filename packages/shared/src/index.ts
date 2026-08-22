@@ -4,6 +4,8 @@ export * from './types/publication.js';
 export * from './types/scheduling.js';
 export * from './types/social-account.js';
 export * from './types/backup.js';
+export * from './types/platform-connection.js';
+export * from './types/publishing-connection.js';
 export * from './types/workspace.js';
 export * from './types/media.js';
 export * from './types/sync.js';

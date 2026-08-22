@@ -163,24 +163,20 @@
 .revision-restore-dialog {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: var(--bg-overlay);
   display: grid;
   place-items: center;
   padding: var(--space-4);
   z-index: 20;
 }
 
-[data-theme='dark'] .revision-restore-dialog {
-  background: rgba(2, 6, 23, 0.62);
-}
-
 .revision-restore-dialog__panel {
   width: min(100%, 360px);
   padding: var(--space-4);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-subtle);
-  background: var(--bg-surface-elevated);
-  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-modal);
+  background: var(--bg-modal);
+  box-shadow: var(--shadow-modal);
 }
 
 .revision-restore-dialog__panel h3 {

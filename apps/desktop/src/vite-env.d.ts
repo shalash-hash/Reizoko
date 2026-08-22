@@ -40,6 +40,10 @@ interface Window {
     setTitle: (title: string) => void;
     setTheme: (mode: 'light' | 'dark' | 'system') => Promise<void>;
     preparePublication: () => Promise<void>;
+    connectTelegramBot: (token: string, connectionId?: string | null) => Promise<void>;
+    addTelegramDestination: (connectionId: string, chatRef: string) => Promise<void>;
+    publishNow: () => Promise<void>;
+    getConnections: () => import('@reizoko/shared').PlatformConnection[];
     getPublicationState: () => Promise<{
       batches: Array<{ id: string; contentItemId: string; contentRevisionId: string }>;
       publications: Array<{
@@ -48,6 +52,8 @@ interface Window {
         platformId: string;
         socialAccountId?: string | null;
         status: string;
+        remotePostId?: string | null;
+        remoteUrl?: string | null;
         preparedSnapshot: { transformedContent: { text: string } };
       }>;
     } | null>;

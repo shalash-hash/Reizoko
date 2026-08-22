@@ -7,6 +7,8 @@ export interface Migration {
 import { migrationV2 } from './v2-revision-metadata.js';
 import { migrationV3 } from './v3-publication-architecture.js';
 import { migrationV4 } from './v4-social-accounts-architecture.js';
+import { migrationV5 } from './v5-platform-connections.js';
+import { migrationV6 } from './v6-connection-destinations.js';
 
 export const MIGRATIONS: Migration[] = [
   {
@@ -94,6 +96,8 @@ export const MIGRATIONS: Migration[] = [
   migrationV2,
   migrationV3,
   migrationV4,
+  migrationV5,
+  migrationV6,
 ];
 
 import type { DatabaseClient } from '../client/database-client.js';

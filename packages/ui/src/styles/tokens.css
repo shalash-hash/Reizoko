@@ -33,6 +33,9 @@
   --bg-input: #ffffff;
   --bg-overlay: rgba(20, 20, 24, 0.45);
   --bg-popover: #ffffff;
+  --bg-modal: #ffffff;
+  --border-modal: var(--border-default);
+  --shadow-modal: var(--shadow-lg);
   --bg-status: #ffffff;
   --bg-preview-stage: #f0eeea;
 
@@ -46,6 +49,7 @@
   --surface: var(--bg-surface);
   --surface-elevated: var(--bg-surface-elevated);
   --surface-muted: var(--bg-surface-muted);
+  --bg-elevated: var(--bg-modal);
 
   --border-subtle: rgba(0, 0, 0, 0.06);
   --border-default: rgba(0, 0, 0, 0.1);
@@ -181,6 +185,9 @@
   --bg-input: #1a1a1f;
   --bg-overlay: rgba(0, 0, 0, 0.72);
   --bg-popover: #1e1e24;
+  --bg-modal: #222228;
+  --border-modal: var(--border-default);
+  --shadow-modal: var(--shadow-lg);
   --bg-status: #141416;
   --bg-preview-stage: #0e0e12;
 
@@ -192,6 +199,7 @@
   --surface: var(--bg-surface);
   --surface-elevated: var(--bg-surface-elevated);
   --surface-muted: var(--bg-surface-muted);
+  --bg-elevated: var(--bg-modal);
 
   --border-subtle: rgba(255, 255, 255, 0.05);
   --border-default: rgba(255, 255, 255, 0.08);

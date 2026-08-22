@@ -23,6 +23,7 @@ describe('database migrations', () => {
         'media_items',
         'publication_batches',
         'publications',
+        'platform_connections',
         'schema_migrations',
         'social_accounts',
         'workspace_state',

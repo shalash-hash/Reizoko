@@ -97,7 +97,7 @@ export function getPlatformTargetLabel(
 
 export function getAccountConnectionLabel(connectionState: SocialAccount['connectionState']): string {
   if (connectionState === 'connected') return 'Подключён';
-  if (connectionState === 'needs_reconnect') return 'Требуется переподключение';
+  if (connectionState === 'needs_reconnect') return 'Требуется повторное подключение';
   return 'Локальный профиль';
 }
 

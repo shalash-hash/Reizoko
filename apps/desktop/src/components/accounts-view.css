@@ -80,7 +80,7 @@
   padding: var(--space-4);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  background: var(--bg-elevated);
+  background: var(--bg-surface);
 }
 
 .accounts-view__card--inactive {
@@ -128,9 +128,9 @@
   right: 0;
   min-width: 160px;
   padding: 6px;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-modal);
   border-radius: var(--radius-md);
-  background: var(--bg-elevated);
+  background: var(--bg-modal);
   box-shadow: var(--shadow-md);
   z-index: 5;
 }
@@ -149,4 +149,91 @@
 
 .accounts-view__menu button:hover {
   background: var(--bg-hover);
+}
+
+.accounts-view__group-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.accounts-view__connection-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.accounts-view__connection-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.accounts-view__card--connection {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border-subtle));
+}
+
+.accounts-view__card--destination {
+  margin-left: var(--space-6);
+  border-style: dashed;
+}
+
+.accounts-view__avatar--bot {
+  color: var(--accent);
+}
+
+.accounts-view__name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.accounts-view__via-bot {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+
+.accounts-view__destinations {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.accounts-view__destinations-empty,
+.accounts-view__group-empty {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.accounts-view__local-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+.accounts-view__local-title {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.accounts-view__card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.accounts-view__empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
 }

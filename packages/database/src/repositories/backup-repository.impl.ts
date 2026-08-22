@@ -5,6 +5,7 @@ import {
   type ContentItemMetadata,
   type ContentRevision,
   type MediaItem,
+  type PlatformConnection,
   type Publication,
   type PublicationBatch,
   type ReizokoBackupData,
@@ -31,7 +32,22 @@ export class SqliteBackupRepository implements BackupRepository {
     const contentItems = await this.selectContentItems();
     const contentRevisions = await this.selectContentRevisions();
     const mediaItems = await this.selectMediaItems();
-    const socialAccounts = await this.selectSocialAccounts();
+    const socialAccountsRaw = await this.selectSocialAccounts();
+    const platformConnections = await this.selectPlatformConnectionsForBackup();
+    const connectedConnectionIds = new Set(
+      socialAccountsRaw
+        .map((account) => account.connectionId)
+        .filter((id): id is string => Boolean(id)),
+    );
+    const socialAccounts = socialAccountsRaw.map((account) => {
+      if (
+        account.connectionState === 'connected' ||
+        (account.connectionId && connectedConnectionIds.has(account.connectionId))
+      ) {
+        return { ...account, connectionState: 'needs_reconnect' as const };
+      }
+      return account;
+    });
     const publicationBatches = await this.selectPublicationBatches();
     const publications = await this.selectPublications();
     const appSettings = await this.selectAppSettings();
@@ -42,6 +58,7 @@ export class SqliteBackupRepository implements BackupRepository {
       contentRevisions,
       mediaItems,
       socialAccounts,
+      platformConnections,
       publicationBatches,
       publications,
       appSettings,
@@ -59,6 +76,7 @@ export class SqliteBackupRepository implements BackupRepository {
       { sql: 'DELETE FROM publication_batches' },
       { sql: 'DELETE FROM content_revisions' },
       { sql: 'DELETE FROM content_items' },
+      { sql: 'DELETE FROM platform_connections' },
       { sql: 'DELETE FROM social_accounts' },
       { sql: 'DELETE FROM media_items' },
       { sql: 'DELETE FROM app_settings' },
@@ -126,11 +144,13 @@ export class SqliteBackupRepository implements BackupRepository {
     }
 
     for (const account of data.socialAccounts) {
+      const connectionState =
+        account.connectionState === 'connected' ? 'needs_reconnect' : account.connectionState;
       statements.push({
         sql: `INSERT INTO social_accounts
-              (id, platform_id, display_name, handle, external_account_id, avatar_media_id,
+              (id, platform_id, display_name, handle, external_account_id, avatar_media_id, connection_id,
                connected_at, created_at, updated_at, deleted_at, is_active, connection_state)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         params: [
           account.id,
           account.platformId,
@@ -138,12 +158,38 @@ export class SqliteBackupRepository implements BackupRepository {
           account.handle ?? null,
           account.externalAccountId ?? null,
           account.avatarMediaId ?? null,
+          account.connectionId ?? null,
           account.createdAt,
           account.createdAt,
           account.updatedAt,
           account.deletedAt ?? null,
           account.isActive ? 1 : 0,
-          account.connectionState,
+          connectionState,
+        ],
+      });
+    }
+
+    for (const connection of data.platformConnections ?? []) {
+      statements.push({
+        sql: `INSERT INTO platform_connections
+              (id, platform_id, method, state, external_identity_id, display_name, handle,
+               connected_at, last_validated_at, secret_ref, error_code, error_message, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        params: [
+          connection.id,
+          connection.platformId,
+          connection.method,
+          'needs_reconnect',
+          connection.externalIdentityId ?? null,
+          connection.displayName ?? null,
+          connection.handle ?? null,
+          connection.connectedAt ?? null,
+          connection.lastValidatedAt ?? null,
+          null,
+          null,
+          null,
+          connection.createdAt,
+          connection.updatedAt,
         ],
       });
     }
@@ -287,6 +333,39 @@ export class SqliteBackupRepository implements BackupRepository {
     }));
   }
 
+  private async selectPlatformConnectionsForBackup(): Promise<PlatformConnection[]> {
+    const result = await this.db.select<{
+      id: string;
+      platform_id: string;
+      method: string;
+      state: string;
+      external_identity_id: string | null;
+      display_name: string | null;
+      handle: string | null;
+      connected_at: string | null;
+      last_validated_at: string | null;
+      created_at: string;
+      updated_at: string;
+    }>(`SELECT id, platform_id, method, state, external_identity_id, display_name, handle,
+               connected_at, last_validated_at, created_at, updated_at
+        FROM platform_connections ORDER BY created_at ASC`);
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      platformId: row.platform_id,
+      method: row.method as PlatformConnection['method'],
+      state: 'needs_reconnect',
+      externalIdentityId: row.external_identity_id,
+      displayName: row.display_name,
+      handle: row.handle,
+      connectedAt: row.connected_at,
+      lastValidatedAt: row.last_validated_at,
+      secretRef: null,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  }
+
   private async selectSocialAccounts(): Promise<SocialAccount[]> {
     const result = await this.db.select<{
       id: string;
@@ -295,6 +374,7 @@ export class SqliteBackupRepository implements BackupRepository {
       handle: string | null;
       external_account_id: string | null;
       avatar_media_id: string | null;
+      connection_id: string | null;
       connected_at: string;
       created_at: string | null;
       updated_at: string | null;
@@ -310,6 +390,7 @@ export class SqliteBackupRepository implements BackupRepository {
       handle: row.handle,
       externalAccountId: row.external_account_id,
       avatarMediaId: row.avatar_media_id,
+      connectionId: row.connection_id,
       isActive: row.is_active === 1,
       connectionState: (row.connection_state as SocialAccount['connectionState']) ?? 'local',
       createdAt: row.created_at ?? row.connected_at,
