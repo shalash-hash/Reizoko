@@ -31,4 +31,5 @@ export * from './composer/presentation-overrides-service.js';
 export * from './workspace/workspace-service.js';
 export * from './workspace/platform-targets.js';
 export * from './platform/platform-display.js';
+export * from './platform/platform-profile-form.js';
 export { DEFAULT_WORKSPACE } from './workspace/workspace-service.js';

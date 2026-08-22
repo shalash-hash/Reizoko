@@ -118,11 +118,28 @@
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
+  transition:
+    background-color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
-.platform-select__option:hover,
-.platform-select__option--active {
+.platform-select__option:not(.platform-select__option--planned):hover {
+  background: color-mix(in srgb, var(--platform-option-tint, var(--accent)) 14%, var(--bg-surface));
+}
+
+.platform-select__option--planned:hover {
   background: var(--bg-hover);
+}
+
+.platform-select__option--keyboard-active:not(:hover) {
+  background: color-mix(in srgb, var(--platform-option-tint, var(--accent)) 10%, var(--bg-surface));
+  border-color: color-mix(in srgb, var(--platform-option-tint, var(--border-focus)) 35%, var(--border-subtle));
+}
+
+.platform-select__option--planned.platform-select__option--keyboard-active:not(:hover) {
+  background: var(--bg-surface-muted);
+  border-color: var(--border-strong);
 }
 
 .platform-select__option:focus-visible {
@@ -132,7 +149,11 @@
 }
 
 .platform-select__option--selected {
-  background: var(--accent-muted);
+  background: color-mix(in srgb, var(--platform-option-tint, var(--accent)) 12%, var(--accent-muted));
+}
+
+.platform-select__option--selected:hover {
+  background: color-mix(in srgb, var(--platform-option-tint, var(--accent)) 18%, var(--accent-muted));
 }
 
 .platform-select__option-main {
@@ -153,5 +174,9 @@
 .platform-select__option-status {
   flex-shrink: 0;
   font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.platform-select__option--planned .platform-select__option-status {
   color: var(--text-muted);
 }

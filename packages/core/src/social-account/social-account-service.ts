@@ -72,7 +72,7 @@ export class SocialAccountService {
 
   private assertDisplayName(displayName: string): void {
     if (!displayName.trim()) {
-      throw new Error('Название аккаунта не может быть пустым');
+      throw new Error('Название профиля не может быть пустым');
     }
   }
 }

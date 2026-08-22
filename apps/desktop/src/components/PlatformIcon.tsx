@@ -1,17 +1,6 @@
 import { InstagramBrandIcon, TelegramBrandIcon, VkBrandIcon } from './platform-icons/brand-icons';
+import { PLATFORM_BRAND_COLORS } from '../platforms/platform-colors';
 import './platform-icon.css';
-
-const PLATFORM_COLORS: Record<string, string> = {
-  instagram: '#E1306C',
-  telegram: '#0088CC',
-  vk: '#0077FF',
-  facebook: '#1877F2',
-  threads: '#000000',
-  x: '#000000',
-  tiktok: '#010101',
-  linkedin: '#0A66C2',
-  bluesky: '#0085FF',
-};
 
 interface PlatformIconProps {
   platformId: string;
@@ -20,7 +9,7 @@ interface PlatformIconProps {
 }
 
 export function PlatformIcon({ platformId, size = 20, muted = false }: PlatformIconProps) {
-  const color = PLATFORM_COLORS[platformId] ?? 'var(--text-muted)';
+  const color = PLATFORM_BRAND_COLORS[platformId] ?? 'var(--text-muted)';
   const iconColor = muted ? 'var(--text-muted)' : color;
   const background = muted ? 'var(--bg-surface-muted)' : `color-mix(in srgb, ${color} 14%, transparent)`;
 

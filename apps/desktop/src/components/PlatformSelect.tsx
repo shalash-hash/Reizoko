@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { PlatformAdapter } from '@reizoko/platform-sdk';
 import { ChevronDown } from 'lucide-react';
 import { groupPlatformsByAvailability } from '../platforms/planned-catalog';
+import { getPlatformBrandColor } from '../platforms/platform-colors';
 import { PlatformIcon } from './PlatformIcon';
 import './platform-select.css';
 
@@ -20,6 +22,17 @@ function formatSelectedLabel(platform: PlatformAdapter): string {
   return `${platform.name} · Скоро`;
 }
 
+function getOptionTintStyle(platform: PlatformAdapter): CSSProperties | undefined {
+  if (!platform.available) {
+    return undefined;
+  }
+  const tint = getPlatformBrandColor(platform.id);
+  if (!tint) {
+    return undefined;
+  }
+  return { '--platform-option-tint': tint } as CSSProperties;
+}
+
 export function PlatformSelect({
   platforms,
   value,
@@ -28,7 +41,7 @@ export function PlatformSelect({
   onChange,
 }: PlatformSelectProps) {
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [keyboardIndex, setKeyboardIndex] = useState(-1);
   const rootRef = useRef<HTMLDivElement>(null);
   const listboxId = useId();
   const selectedPlatform = platforms.find((platform) => platform.id === value) ?? null;
@@ -52,7 +65,7 @@ export function PlatformSelect({
 
   useEffect(() => {
     if (!open) {
-      setActiveIndex(-1);
+      setKeyboardIndex(-1);
     }
   }, [open]);
 
@@ -61,11 +74,11 @@ export function PlatformSelect({
     setOpen(false);
   };
 
-  const moveActiveIndex = (direction: 1 | -1) => {
+  const moveKeyboardIndex = (direction: 1 | -1) => {
     if (options.length === 0) {
       return;
     }
-    setActiveIndex((current) => {
+    setKeyboardIndex((current) => {
       const start = current < 0 ? (direction === 1 ? -1 : 0) : current;
       const next = (start + direction + options.length) % options.length;
       return next;
@@ -82,10 +95,12 @@ export function PlatformSelect({
       if (!open) {
         setOpen(true);
         const selectedIndex = options.findIndex((platform) => platform.id === value);
-        setActiveIndex(selectedIndex >= 0 ? selectedIndex : event.key === 'ArrowDown' ? 0 : options.length - 1);
+        setKeyboardIndex(
+          selectedIndex >= 0 ? selectedIndex : event.key === 'ArrowDown' ? 0 : options.length - 1,
+        );
         return;
       }
-      moveActiveIndex(event.key === 'ArrowDown' ? 1 : -1);
+      moveKeyboardIndex(event.key === 'ArrowDown' ? 1 : -1);
       return;
     }
 
@@ -104,17 +119,17 @@ export function PlatformSelect({
   const handleListboxKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      moveActiveIndex(1);
+      moveKeyboardIndex(1);
       return;
     }
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      moveActiveIndex(-1);
+      moveKeyboardIndex(-1);
       return;
     }
-    if (event.key === 'Enter' && activeIndex >= 0) {
+    if (event.key === 'Enter' && keyboardIndex >= 0) {
       event.preventDefault();
-      const platform = options[activeIndex];
+      const platform = options[keyboardIndex];
       if (platform) {
         selectPlatform(platform.id);
       }
@@ -128,7 +143,7 @@ export function PlatformSelect({
 
   const renderOption = (platform: PlatformAdapter, index: number) => {
     const selected = platform.id === value;
-    const active = index === activeIndex;
+    const keyboardActive = index === keyboardIndex;
 
     return (
       <button
@@ -136,16 +151,17 @@ export function PlatformSelect({
         type="button"
         role="option"
         aria-selected={selected}
+        data-platform={platform.id}
         data-testid={`${testId}-option-${platform.id}`}
         className={[
           'platform-select__option',
           !platform.available ? 'platform-select__option--planned' : '',
-          active ? 'platform-select__option--active' : '',
+          keyboardActive ? 'platform-select__option--keyboard-active' : '',
           selected ? 'platform-select__option--selected' : '',
         ]
           .filter(Boolean)
           .join(' ')}
-        onMouseEnter={() => setActiveIndex(index)}
+        style={getOptionTintStyle(platform)}
         onClick={() => selectPlatform(platform.id)}
       >
         <span className="platform-select__option-main">

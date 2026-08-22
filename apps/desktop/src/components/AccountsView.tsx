@@ -272,7 +272,7 @@ export function AccountsView() {
             }}
           >
             <Link2 size={14} strokeWidth={2} aria-hidden />
-            Привязать подключение
+            Привязать к боту
           </Button>
         ) : null}
 
@@ -454,7 +454,7 @@ export function AccountsView() {
             <span>{platform.name}</span>
           </div>
           <Button variant="ghost" size="sm" onClick={() => openCreate(platform.id)}>
-            + Добавить
+            + Профиль
           </Button>
         </div>
 
@@ -481,7 +481,7 @@ export function AccountsView() {
         </div>
         <Button variant="primary" data-testid="accounts-add" onClick={() => openCreate()}>
           <Plus size={16} strokeWidth={2} aria-hidden />
-          Добавить аккаунт
+          Добавить профиль
         </Button>
       </header>
 
@@ -515,6 +515,7 @@ export function AccountsView() {
           platforms={platforms}
           initialPlatformId={dialogPlatformId ?? editingAccount?.platformId}
           account={editingAccount?.id ? editingAccount : null}
+          onConnectTelegram={() => openTelegramConnect()}
           onClose={() => {
             setDialogOpen(false);
             setEditingAccount(null);

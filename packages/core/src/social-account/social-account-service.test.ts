@@ -24,6 +24,6 @@ describe('SocialAccountService validation', () => {
   it('rejects empty display names', async () => {
     await expect(
       service.createAccount({ platformId: 'instagram', displayName: '   ' }),
-    ).rejects.toThrow('Название аккаунта не может быть пустым');
+    ).rejects.toThrow('Название профиля не может быть пустым');
   });
 });

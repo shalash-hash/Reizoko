@@ -12,6 +12,7 @@ const shellSources = [
   'components/PlatformSelect.tsx',
   'components/PlatformComposerPanel.tsx',
   'components/AccountDialog.tsx',
+  'components/AccountsView.tsx',
 ].map((file) => readFileSync(path.join(root, file), 'utf8'));
 
 const platformIconSource = readFileSync(path.join(root, 'components/PlatformIcon.tsx'), 'utf8');
@@ -43,5 +44,14 @@ describe('ui language audit', () => {
     const composer = shellSources[4]!;
     expect(composer).toContain('Изображение будет отправлено в исходном виде.');
     expect(composer).toContain('data-testid="composer-media-original-note"');
+  });
+
+  it('avoids technical handle wording in accounts UI', () => {
+    const accountDialog = shellSources[5]!;
+    const accountsView = shellSources[6]!;
+    expect(accountDialog).not.toContain('Handle / username');
+    expect(accountDialog).toContain('PROFILE_DISPLAY_NAME_LABEL');
+    expect(accountsView).toContain('Добавить профиль');
+    expect(accountsView).not.toContain('Добавить аккаунт');
   });
 });
