@@ -1,6 +1,6 @@
 import { getPlatformDisplayName } from './platform-display.js';
 
-export type PlatformConnectionCapability = 'none' | 'telegram_bot' | 'future_oauth';
+export type PlatformConnectionCapability = 'none' | 'telegram_bot' | 'vk_oauth' | 'future_oauth';
 
 export interface PlatformProfileFormConfig {
   platformId: string;
@@ -54,8 +54,10 @@ const PLATFORM_PROFILE_FORM_CONFIGS: Record<string, PlatformProfileFormConfig> =
     identifierHelp: 'Необязательно. Можно указать ссылку на страницу или сообщество ВКонтакте.',
     localProfileStatusTitle: 'Локальный профиль',
     localProfileStatusBody:
-      'Это не авторизация во ВКонтакте. Подключение ВКонтакте к Reizoko будет настроено отдельно. На этом шаге вы только создаёте профиль для подготовки публикаций.',
-    connectionCapability: 'future_oauth',
+      'Для реальной публикации используйте «Подключить ВКонтакте» и выберите место публикации.',
+    connectionCapability: 'vk_oauth',
+    realConnectionHint: 'ВКонтакте поддерживает настоящее подключение и публикацию на стену.',
+    realConnectionActionLabel: 'Подключить ВКонтакте',
   },
   facebook: {
     platformId: 'facebook',

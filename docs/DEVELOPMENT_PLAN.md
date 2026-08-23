@@ -345,7 +345,7 @@ Stage 1 считается **завершённым** — все blocking criter
 | 1.5.3 | Account Connection UI | ✅ DONE | Telegram connect/destination dialogs, hierarchy |
 | 1.5.4 | Telegram Bot Connection & Publishing | ✅ DONE | Bot API, real publish, smoke:telegram |
 | 1.5.5 | Platform Composer / Per-platform Overrides | ✅ DONE | Active tabs, crop/zoom, overrides, snapshot v2, smoke:composer |
-| 1.5.6 | VK Connection | ➡️ NEXT | VK ID OAuth + community token |
+| 1.5.6 | VK Connection & Publishing | ✅ DONE | OAuth, multi-target, wall.post + photos, migration v8 |
 | 1.5.7 | Instagram / Meta Connection | ⬜ PLANNED | Business/Creator, Meta App Review |
 | 1.5.8 | Local Publisher Engine | ⬜ PLANNED | `PlatformPublisher` implementations |
 | 1.5.9 | Publish Now UX | ⬜ PLANNED | Real HTTP publish from desktop |
@@ -442,8 +442,8 @@ Stage 1 считается **завершённым** — все blocking criter
 | ID | Platform | Preview | API Publish | Status |
 |----|----------|---------|-------------|--------|
 | P.1 | Instagram | ✅ Stage 1 | ⬜ Stage 1.5 | Active — requires public media URL |
-| P.2 | Telegram | ✅ Stage 1 | ⬜ Stage 1.5 | Active — Bot API recommended first |
-| P.3 | VK | ✅ Stage 1 | ⬜ Stage 1.5 | Active — VK ID OAuth |
+| P.2 | Telegram | ✅ Stage 1 | ✅ Stage 1.5 | Bot API publishing |
+| P.3 | VK | ✅ Stage 1 | ✅ Stage 1.5 | OAuth + wall publishing |
 | P.4 | Facebook | ⬜ Catalog | ⬜ Stage 3+ | Planned |
 | P.5 | Threads | ⬜ Catalog | ⬜ Stage 3+ | Planned |
 | P.6 | X | ⬜ Catalog | ⬜ Stage 3+ | Planned |

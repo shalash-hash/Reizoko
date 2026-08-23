@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { normalizeTelegramDestinationInput, TelegramDestinationInputError } from '@reizoko/core';
 import { Button, IconButton } from '@reizoko/ui';
+import { AccountDialogOverlay } from './AccountDialogOverlay';
 import './account-dialog.css';
 
 interface TelegramDestinationDialogProps {
@@ -63,11 +64,10 @@ export function TelegramDestinationDialog({
   };
 
   return (
-    <div className="account-dialog-overlay" onClick={loading ? undefined : onClose} role="presentation">
+    <AccountDialogOverlay onClose={onClose} disabled={loading}>
       <div
         className="account-dialog"
         data-testid="telegram-destination-dialog"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Добавить канал или чат"
@@ -159,6 +159,6 @@ export function TelegramDestinationDialog({
           )}
         </footer>
       </div>
-    </div>
+    </AccountDialogOverlay>
   );
 }

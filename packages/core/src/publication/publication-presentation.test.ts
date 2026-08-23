@@ -7,6 +7,7 @@ import { createBlock } from '../content/block-factory.js';
 import { upsertMediaTransform, presentationTargetKey } from '../composer/media-transform.js';
 import { PublicationService } from './publication-service.js';
 import { FakeTelegramTransport } from '../telegram/fake-telegram-transport.js';
+import { FakeVkTransport } from '../vk/fake-vk-transport.js';
 
 const instagramTestAdapter: PlatformAdapter = {
   id: 'instagram',
@@ -108,6 +109,7 @@ describe('publication presentation snapshots', () => {
       db.socialAccounts,
       db.platformConnections,
       new FakeTelegramTransport(),
+      new FakeVkTransport(),
     );
 
     const item = await db.content.createItem({ title: 'Composer post' }, [
@@ -166,6 +168,7 @@ describe('publication presentation snapshots', () => {
       db.socialAccounts,
       db.platformConnections,
       new FakeTelegramTransport(),
+      new FakeVkTransport(),
     );
 
     const item = await db.content.createItem({ title: 'Accounts' }, [

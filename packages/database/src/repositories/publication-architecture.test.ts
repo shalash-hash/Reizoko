@@ -10,6 +10,7 @@ import {
 import { createBlock } from '../../../core/src/content/content-service.js';
 import { PublicationService } from '../../../core/src/publication/publication-service.js';
 import { FakeTelegramTransport } from '../../../core/src/telegram/fake-telegram-transport.js';
+import { FakeVkTransport } from '../../../core/src/vk/fake-vk-transport.js';
 import { bootstrapDatabase } from '../bootstrap.js';
 import { MemoryDatabaseClient } from '../test/memory-database-client.js';
 import { runMigrations, MIGRATIONS } from '../migrations/index.js';
@@ -76,6 +77,7 @@ async function createPublicationTestContext() {
     db.socialAccounts,
     db.platformConnections,
     new FakeTelegramTransport(),
+    new FakeVkTransport(),
   );
 
   return { client, db, service };

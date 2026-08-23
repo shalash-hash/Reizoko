@@ -10,6 +10,7 @@ import { migrationV4 } from './v4-social-accounts-architecture.js';
 import { migrationV5 } from './v5-platform-connections.js';
 import { migrationV6 } from './v6-connection-destinations.js';
 import { migrationV7 } from './v7-platform-presentation.js';
+import { migrationV8 } from './v8-vk-publication-targets.js';
 
 export const MIGRATIONS: Migration[] = [
   {
@@ -100,6 +101,7 @@ export const MIGRATIONS: Migration[] = [
   migrationV5,
   migrationV6,
   migrationV7,
+  migrationV8,
 ];
 
 import type { DatabaseClient } from '../client/database-client.js';

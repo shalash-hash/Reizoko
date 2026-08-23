@@ -219,6 +219,12 @@ describe('connection error mapping', () => {
     expect(isConnectionSecretMissingError(new ConnectionSecretMissingError())).toBe(true);
     expect(isConnectionSecretMissingError(new Error('SECRET_MISSING'))).toBe(true);
   });
+
+  it('maps secret missing errors for telegram', () => {
+    const message = toUserFacingConnectionError(new ConnectionSecretMissingError('telegram'));
+    expect(message).toContain('Telegram');
+    expect(message).not.toContain('ВКонтакте');
+  });
 });
 
 describe('PlatformConnectionService secret verification', () => {

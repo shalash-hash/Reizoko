@@ -16,6 +16,15 @@
   box-shadow: var(--shadow-modal);
 }
 
+.account-dialog--vk-setup {
+  width: min(100%, 620px);
+}
+
+.account-dialog__body--scrollable {
+  max-height: min(70vh, 720px);
+  overflow-y: auto;
+}
+
 .account-dialog__header,
 .account-dialog__footer {
   display: flex;
@@ -200,4 +209,99 @@
 .account-dialog__footer {
   align-items: center;
   border-top: 1px solid var(--border-subtle);
+}
+
+.account-dialog--wide {
+  width: min(560px, 100%);
+}
+
+.vk-target-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.vk-target-list__section {
+  margin: var(--space-2) 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vk-target-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+}
+
+.vk-target-item__name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vk-target-item__kind {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.vk-external-wall {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.vk-community-token__token-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vk-community-token__token-row input {
+  flex: 1;
+}
+
+.vk-community-token__hint {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.vk-community-token__permissions {
+  margin: var(--space-1) 0 var(--space-3);
+  padding-left: 1.25rem;
+}
+
+.vk-target-add-options {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-3) 0;
+}
+
+.vk-target-add-option {
+  display: grid;
+  gap: var(--space-1);
+  text-align: left;
+  padding: var(--space-3);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+}
+
+.vk-target-add-option:hover {
+  border-color: var(--accent-primary, #4c6ef5);
+}
+
+.vk-target-add-option__title {
+  font-weight: 600;
+}
+
+.vk-target-add-option__hint {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }

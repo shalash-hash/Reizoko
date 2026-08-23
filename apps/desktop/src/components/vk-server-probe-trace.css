@@ -1,0 +1,72 @@
+.vk-probe-trace {
+  margin-top: var(--space-2);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.vk-probe-trace summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vk-probe-trace__list {
+  margin: 0;
+  padding: 0 12px 12px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vk-probe-trace__item {
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+}
+
+.vk-probe-trace__item--ok {
+  border-color: color-mix(in srgb, var(--success, #2e7d32) 35%, var(--border-subtle));
+}
+
+.vk-probe-trace__item--fail {
+  border-color: color-mix(in srgb, var(--danger, #c62828) 35%, var(--border-subtle));
+}
+
+.vk-probe-trace__item--warn {
+  border-color: color-mix(in srgb, #d97706 35%, var(--border-subtle));
+}
+
+.vk-probe-trace__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.vk-probe-trace__status {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vk-probe-trace__label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.vk-probe-trace__channel {
+  color: var(--text-muted);
+}
+
+.vk-probe-trace__url,
+.vk-probe-trace__detail {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

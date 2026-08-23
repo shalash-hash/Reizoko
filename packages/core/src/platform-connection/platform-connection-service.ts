@@ -28,6 +28,7 @@ export class PlatformConnectionService {
       'api_hash',
       'session',
       'service_token',
+      'community_token',
     ],
   ): Promise<void> {
     for (const purpose of purposes) {

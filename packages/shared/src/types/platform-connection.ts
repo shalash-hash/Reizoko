@@ -77,7 +77,8 @@ export type SecretPurpose =
   | 'bot_token'
   | 'api_hash'
   | 'session'
-  | 'service_token';
+  | 'service_token'
+  | 'community_token';
 
 export function buildSecretRef(connectionId: string, purpose: SecretPurpose): string {
   return `connection/${connectionId}/${purpose}`;

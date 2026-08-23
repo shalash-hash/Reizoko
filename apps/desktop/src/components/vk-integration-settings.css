@@ -1,0 +1,120 @@
+.vk-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.vk-settings__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.vk-settings__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.vk-settings__field > span:first-child {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.vk-settings__field input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+.vk-settings__field input:read-only {
+  color: var(--text-secondary);
+  background: var(--bg-muted, var(--bg-surface));
+}
+
+.vk-settings__password-wrap,
+.vk-settings__readonly-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vk-settings__password-wrap input,
+.vk-settings__readonly-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.vk-settings__hint {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.vk-settings__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.vk-settings__status {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.vk-settings__status--ok {
+  color: var(--success, #2e7d32);
+}
+
+.vk-settings__status--error {
+  color: var(--danger, #c62828);
+}
+
+.vk-settings__stored-secret {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.vk-settings__stored-secret input {
+  flex: 1;
+  min-width: 0;
+}
+
+.vk-settings__intro {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.vk-settings__link {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.vk-settings__link:hover {
+  color: var(--text-primary);
+}
+
+.vk-settings__link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vk-settings__details {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}

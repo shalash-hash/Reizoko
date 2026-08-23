@@ -614,7 +614,18 @@ interface PlatformDefinition {
 | Publishing | `TelegramPublisher` — `sendMessage` / `sendPhoto` / `sendMediaGroup` |
 | Capabilities | headings, links, multiple images |
 
-### VK *(available)*
+### VK *(available + connected publishing)*
+
+| Компонент | Описание |
+|-----------|----------|
+| Adapter | `platforms/vk/src/VkAdapter.ts` — transform/validate (preview + publish) |
+| Preview | `VkPreview.tsx` |
+| Connection | `VkConnectionService` — OAuth (system browser), one credential → many targets |
+| Targets | `social_accounts` + `platform_metadata_json` (`targetType`, `ownerId`, `postAsGroup`) |
+| Publishing | `VkPublisher` — `wall.post` + `photos.getWallUploadServer` → upload → `photos.saveWallPhoto` |
+| Destinations | self wall, managed communities (`from_group=1`), external user wall (if API allows) |
+
+**Статус:** migration v8, OAuth via Tauri `vk_*` commands, real publish for connected VK targets (Stage 1.5.6).
 
 | Аспект | Реализация |
 |--------|------------|
@@ -801,7 +812,8 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | Social accounts UI | ✅ DONE | AccountsView + local profiles (Stage 1.13) |
 | Platform connections | ✅ DONE | v5/v6, Credential Manager, Telegram Bot API (Stage 1.5.2–1.5.4) |
 | Telegram publish now | ✅ DONE | Real Bot API publish for connected destinations (Stage 1.5.4) |
-| Publish now (IG/VK) | PLANNED | Disabled «скоро» until platform connection |
+| VK publish now | ✅ DONE | OAuth + wall.post for connected VK targets (Stage 1.5.6) |
+| Publish now (IG) | PLANNED | Disabled «скоро» until platform connection |
 | Calendar / History / Analytics | PLANNED STAGE 2/3 | PlannedFeature placeholders |
 | Cloud sync | PLANNED STAGE 2 | |
 | Web client | PLANNED STAGE 2 | |

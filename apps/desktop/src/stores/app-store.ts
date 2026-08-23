@@ -12,6 +12,8 @@ import type {
   UpdateSocialAccountInput,
   WorkspaceState,
 } from '@reizoko/shared';
+import { VK_CANONICAL_REDIRECT_URI, VK_DEFAULT_SERVER_BASE_URL, VK_OAUTH_SCOPES } from '@reizoko/shared';
+import type { VkOAuthConfig } from '@reizoko/shared';
 import type { ThemeMode } from '@reizoko/ui';
 import { THEME_SETTINGS_KEY, readStoredThemeMode, persistThemeMode } from '@reizoko/ui';
 import {
@@ -19,6 +21,7 @@ import {
   PublicationService,
   SocialAccountService,
   TelegramConnectionService,
+  VkConnectionService,
   PlatformConnectionService,
   addPlatformTarget,
   createPlatformTarget,
@@ -30,6 +33,21 @@ import {
   removeTargetsForAccount,
   toPublicationTarget,
   upsertMediaTransform,
+  validateVkOAuthConfig,
+  loadVkOAuthConfig,
+  saveVkOAuthConfig,
+  loadVkIntegrationFormState,
+  buildVkOAuthConfigFromDraft,
+  verifyVkIntegrationSettings,
+  buildVkOAuthMetaSettingsKey,
+  parseVkOAuthConnectionMeta,
+  serializeVkOAuthConnectionMeta,
+  type VkIntegrationDraft,
+  type VkIntegrationFormState,
+  type VkIntegrationVerificationResult,
+  type VkTargetCandidate,
+  type VkTargetDiscoveryResult,
+  type VkCommunityTokenVerification,
   type GroupedRevisionHistory,
 } from '@reizoko/core';
 import { platformRegistry } from '@reizoko/platform-sdk';
@@ -53,6 +71,8 @@ import { isSmokeTestMode } from '../config/smoke-test';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { getAllPlatformCatalog } from '../platforms/planned-catalog';
 import { createAppServices } from '../services/app-services';
+import { probeVkServerFromNative } from '../services/vk-server-probe-runtime';
+import { createSecretStore } from '../services/secret-store';
 import {
   applyAspectRatio,
   applyPlatformText,
@@ -85,6 +105,7 @@ interface AppState {
   publicationService: PublicationService | null;
   socialAccountService: SocialAccountService | null;
   telegramConnectionService: TelegramConnectionService | null;
+  vkConnectionService: VkConnectionService | null;
   platformConnectionService: PlatformConnectionService | null;
   connections: PlatformConnection[];
   accounts: SocialAccount[];
@@ -156,6 +177,26 @@ interface AppState {
   loadConnections: () => Promise<void>;
   connectTelegramBot: (token: string, existingConnectionId?: string | null) => Promise<void>;
   addTelegramDestination: (connectionId: string, chatRef: string) => Promise<void>;
+  connectVkOAuth: (existingConnectionId?: string | null, options?: { upgradePermissions?: boolean }) => Promise<string | null>;
+  loadVkIntegrationConfig: () => Promise<VkOAuthConfig>;
+  loadVkIntegrationFormState: () => Promise<VkIntegrationFormState>;
+  saveVkIntegrationDraft: (draft: VkIntegrationDraft) => Promise<void>;
+  verifyVkIntegrationDraft: (draft: VkIntegrationDraft) => Promise<VkIntegrationVerificationResult>;
+  saveVkIntegrationConfig: (config: VkOAuthConfig) => Promise<void>;
+  verifyVkIntegrationConfig: () => Promise<VkIntegrationVerificationResult>;
+  loadVkTargetsForConnection: (connectionId: string) => Promise<VkTargetDiscoveryResult>;
+  addVkPublicationTargets: (connectionId: string, targets: VkTargetCandidate[]) => Promise<void>;
+  resolveVkExternalWall: (connectionId: string, input: string) => Promise<VkTargetCandidate>;
+  verifyVkCommunityToken: (input: {
+    communityInput: string;
+    accessToken: string;
+  }) => Promise<VkCommunityTokenVerification>;
+  connectVkCommunityToken: (input: {
+    verification: VkCommunityTokenVerification;
+    accessToken: string;
+  }) => Promise<void>;
+  replaceVkCommunityToken: (connectionId: string, accessToken: string) => Promise<void>;
+  refreshVkCommunityTokenStatus: (connectionId: string) => Promise<VkCommunityTokenVerification>;
   disconnectConnection: (connectionId: string) => Promise<void>;
   linkAccountToConnection: (accountId: string, connectionId: string) => Promise<void>;
   dismissPublicationConfirmation: () => void;
@@ -295,6 +336,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   publicationResults: null,
   connections: [],
   telegramConnectionService: null,
+  vkConnectionService: null,
   platformConnectionService: null,
   restoreCandidate: null,
   presentationOverrides: {},
@@ -339,6 +381,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         publicationService: services.publicationService,
         socialAccountService,
         telegramConnectionService: services.telegramConnectionService,
+        vkConnectionService: services.vkConnectionService,
         platformConnectionService: services.platformConnectionService,
         connections,
         accounts,
@@ -971,12 +1014,22 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   loadConnections: async () => {
-    const { db, telegramConnectionService } = get();
+    const { db, telegramConnectionService, vkConnectionService } = get();
     if (!db) return;
     const raw = await db.platformConnections.listAll();
-    const connections = telegramConnectionService
-      ? await telegramConnectionService.verifyAllConnectionsHealth(raw)
-      : raw;
+    let connections = raw;
+    if (telegramConnectionService) {
+      connections = await telegramConnectionService.verifyAllConnectionsHealth(connections);
+    }
+    if (vkConnectionService) {
+      connections = await Promise.all(
+        connections.map((connection) =>
+          connection.platformId === 'vk'
+            ? vkConnectionService.verifyConnectionHealth(connection)
+            : connection,
+        ),
+      );
+    }
     set({ connections });
   },
 
@@ -1009,10 +1062,209 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadAccounts();
   },
 
+  connectVkOAuth: async (existingConnectionId?: string | null, options?: { upgradePermissions?: boolean }) => {
+    const { vkConnectionService, db } = get();
+    if (!vkConnectionService || !db) throw new Error('Сервис подключений недоступен');
+    const secrets = createSecretStore();
+    const config = await loadVkOAuthConfig(
+      {
+        get: async (key) => db.settings.get<string>(key, ''),
+        set: async (key, value) => db.settings.set(key, value),
+      },
+      secrets,
+    );
+    const configError = validateVkOAuthConfig(config);
+    if (configError) throw new Error(configError);
+    const { connection, oauthMeta } = await vkConnectionService.connectOAuth(
+      {
+        appId: config.appId,
+        serverBaseUrl: config.serverBaseUrl ?? VK_DEFAULT_SERVER_BASE_URL,
+        redirectUri: config.redirectUri ?? VK_CANONICAL_REDIRECT_URI,
+      },
+      [...VK_OAUTH_SCOPES],
+      existingConnectionId,
+      { forceConsent: options?.upgradePermissions ?? Boolean(existingConnectionId) },
+    );
+    if (oauthMeta) {
+      await db.settings.set(
+        buildVkOAuthMetaSettingsKey(connection.id),
+        serializeVkOAuthConnectionMeta(oauthMeta),
+      );
+    }
+    await get().loadConnections();
+    return connection.id;
+  },
+
+  loadVkIntegrationConfig: async () => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    return loadVkOAuthConfig(
+      {
+        get: async (key) => db.settings.get<string>(key, ''),
+        set: async (key, value) => db.settings.set(key, value),
+      },
+      createSecretStore(),
+    );
+  },
+
+  loadVkIntegrationFormState: async () => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    const reader = {
+      get: async (key: string) => db.settings.get<string>(key, ''),
+      set: async (key: string, value: string) => db.settings.set(key, value),
+    };
+    return loadVkIntegrationFormState(reader, createSecretStore());
+  },
+
+  saveVkIntegrationDraft: async (draft: VkIntegrationDraft) => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    const reader = {
+      get: async (key: string) => db.settings.get<string>(key, ''),
+      set: async (key: string, value: string) => db.settings.set(key, value),
+    };
+    const secrets = createSecretStore();
+    const config = await buildVkOAuthConfigFromDraft(reader, secrets, draft);
+    await saveVkOAuthConfig(reader, secrets, config);
+  },
+
+  verifyVkIntegrationDraft: async (draft: VkIntegrationDraft) => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    const reader = {
+      get: async (key: string) => db.settings.get<string>(key, ''),
+      set: async (key: string, value: string) => db.settings.set(key, value),
+    };
+    const secrets = createSecretStore();
+    const config = await buildVkOAuthConfigFromDraft(reader, secrets, draft);
+    let nativeProbeSteps: Awaited<ReturnType<typeof probeVkServerFromNative>> = [];
+    try {
+      nativeProbeSteps = await probeVkServerFromNative(config.serverBaseUrl ?? VK_DEFAULT_SERVER_BASE_URL);
+    } catch (error) {
+      nativeProbeSteps = [
+        {
+          id: 'native-probe-command',
+          label: 'Нативная проверка (Tauri)',
+          channel: 'native',
+          status: 'fail',
+          detail: error instanceof Error ? error.message : String(error),
+        },
+      ];
+    }
+    return verifyVkIntegrationSettings(config, { nativeProbeSteps });
+  },
+
+  saveVkIntegrationConfig: async (config: VkOAuthConfig) => {
+    const { db } = get();
+    if (!db) throw new Error('База данных недоступна');
+    await saveVkOAuthConfig(
+      {
+        get: async (key) => db.settings.get<string>(key, ''),
+        set: async (key, value) => db.settings.set(key, value),
+      },
+      createSecretStore(),
+      {
+        ...config,
+        redirectUri: VK_CANONICAL_REDIRECT_URI,
+      },
+    );
+  },
+
+  verifyVkIntegrationConfig: async () => {
+    const config = await get().loadVkIntegrationConfig();
+    let nativeProbeSteps: Awaited<ReturnType<typeof probeVkServerFromNative>> = [];
+    try {
+      nativeProbeSteps = await probeVkServerFromNative(config.serverBaseUrl ?? VK_DEFAULT_SERVER_BASE_URL);
+    } catch (error) {
+      nativeProbeSteps = [
+        {
+          id: 'native-probe-command',
+          label: 'Нативная проверка (Tauri)',
+          channel: 'native',
+          status: 'fail',
+          detail: error instanceof Error ? error.message : String(error),
+        },
+      ];
+    }
+    return verifyVkIntegrationSettings(config, { nativeProbeSteps });
+  },
+
+  loadVkTargetsForConnection: async (connectionId: string) => {
+    const { vkConnectionService, db } = get();
+    if (!vkConnectionService || !db) throw new Error('Сервис подключений недоступен');
+    const rawMeta = await db.settings.get<string>(buildVkOAuthMetaSettingsKey(connectionId), '');
+    const oauthMeta = parseVkOAuthConnectionMeta(rawMeta || null);
+    return vkConnectionService.listAvailableTargets(connectionId, oauthMeta);
+  },
+
+  addVkPublicationTargets: async (connectionId: string, targets: VkTargetCandidate[]) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    await vkConnectionService.addPublicationTargets({ connectionId, targets });
+    await get().loadAccounts();
+  },
+
+  resolveVkExternalWall: async (connectionId: string, input: string) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    const candidate = await vkConnectionService.resolveExternalWall(connectionId, input);
+    if (!candidate.canPost) {
+      throw new Error(
+        'На эту стену нельзя публиковать через подключённый аккаунт ВКонтакте.',
+      );
+    }
+    return candidate;
+  },
+
+  verifyVkCommunityToken: async (input: { communityInput: string; accessToken: string }) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    const userOAuth = await vkConnectionService.findUserOAuthConnection();
+    return vkConnectionService.verifyCommunityToken({
+      communityInput: input.communityInput,
+      accessToken: input.accessToken,
+      userOAuthSecretRef: userOAuth?.secretRef ?? null,
+    });
+  },
+
+  connectVkCommunityToken: async (input: {
+    verification: VkCommunityTokenVerification;
+    accessToken: string;
+  }) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    await vkConnectionService.connectCommunityToken(input);
+    await get().loadConnections();
+    await get().loadAccounts();
+  },
+
+  replaceVkCommunityToken: async (connectionId: string, accessToken: string) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    await vkConnectionService.replaceCommunityToken(connectionId, accessToken);
+    await get().loadConnections();
+  },
+
+  refreshVkCommunityTokenStatus: async (connectionId: string) => {
+    const { vkConnectionService } = get();
+    if (!vkConnectionService) throw new Error('Сервис подключений недоступен');
+    const verification = await vkConnectionService.refreshCommunityTokenStatus(connectionId);
+    await get().loadConnections();
+    await get().loadAccounts();
+    return verification;
+  },
+
   disconnectConnection: async (connectionId: string) => {
-    const { telegramConnectionService, db } = get();
-    if (!telegramConnectionService || !db) return;
-    await telegramConnectionService.disconnect(connectionId);
+    const { telegramConnectionService, vkConnectionService, db } = get();
+    if (!db) return;
+    const connection = await db.platformConnections.getById(connectionId);
+    if (!connection) return;
+    if (connection.platformId === 'vk' && vkConnectionService) {
+      await vkConnectionService.disconnect(connectionId);
+    } else if (telegramConnectionService) {
+      await telegramConnectionService.disconnect(connectionId);
+    }
     await db.socialAccounts.clearConnectionForAccounts(connectionId);
     await get().loadConnections();
     await get().loadAccounts();

@@ -34,6 +34,11 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
+# Server runtime data
+server/.env
+server/storage/oauth/*
+!server/storage/oauth/.gitkeep
+
 # Test / coverage
 coverage/
 .nyc_output/

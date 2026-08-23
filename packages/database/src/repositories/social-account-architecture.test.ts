@@ -7,6 +7,8 @@ import {
 import {
   PublicationService,
   SocialAccountService,
+  FakeTelegramTransport,
+  FakeVkTransport,
   addPlatformTarget,
   createPlatformTarget,
   normalizeWorkspaceState,
@@ -59,6 +61,10 @@ async function createContext() {
     db.publicationBatches,
     db.publications,
     registry,
+    db.socialAccounts,
+    db.platformConnections,
+    new FakeTelegramTransport(),
+    new FakeVkTransport(),
   );
 
   return { client, db, socialAccountService, publicationService };

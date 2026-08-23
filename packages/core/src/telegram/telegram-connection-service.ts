@@ -182,7 +182,7 @@ export class TelegramConnectionService {
 
     if (healthy.state !== 'connected' || !healthy.secretRef || !healthy.externalIdentityId) {
 
-      throw new ConnectionSecretMissingError();
+      throw new ConnectionSecretMissingError('telegram');
 
     }
 
@@ -214,7 +214,7 @@ export class TelegramConnectionService {
 
         });
 
-        throw new ConnectionSecretMissingError();
+        throw new ConnectionSecretMissingError('telegram');
 
       }
 

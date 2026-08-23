@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun, Sparkles } from 'lucide-react';
 import { Badge, useTheme, type ThemeMode } from '@reizoko/ui';
 import { BackupSettingsPanel } from './BackupSettingsPanel';
+import { VkIntegrationSettingsPanel } from './VkIntegrationSettingsPanel';
 import './settings-view.css';
 
 const THEME_OPTIONS: Array<{
@@ -84,6 +85,8 @@ export function SettingsView() {
       </section>
 
       <BackupSettingsPanel />
+
+      <VkIntegrationSettingsPanel />
 
       <section className="settings-panel settings-panel--about">
         <h2>О приложении</h2>

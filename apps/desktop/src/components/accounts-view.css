@@ -237,3 +237,10 @@
   gap: var(--space-2);
   justify-content: center;
 }
+
+.accounts-view__community-refresh-error {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-2);
+  color: var(--text-danger, #b91c1c);
+  font-size: var(--text-sm);
+}

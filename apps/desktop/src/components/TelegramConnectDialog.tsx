@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff, X } from 'lucide-react';
 import { Button, IconButton } from '@reizoko/ui';
+import { AccountDialogOverlay } from './AccountDialogOverlay';
 import './account-dialog.css';
 
 interface TelegramConnectDialogProps {
@@ -45,11 +46,10 @@ export function TelegramConnectDialog({
   };
 
   return (
-    <div className="account-dialog-overlay" onClick={loading ? undefined : onClose} role="presentation">
+    <AccountDialogOverlay onClose={onClose} disabled={loading}>
       <div
         className="account-dialog"
         data-testid="telegram-connect-dialog"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Подключить Telegram-бота"
@@ -119,6 +119,6 @@ export function TelegramConnectDialog({
           </Button>
         </footer>
       </div>
-    </div>
+    </AccountDialogOverlay>
   );
 }

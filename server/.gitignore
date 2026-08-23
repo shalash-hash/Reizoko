@@ -1,0 +1,4 @@
+.env
+storage/oauth/*
+!storage/oauth/.gitkeep
+*.log

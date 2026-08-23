@@ -8,6 +8,7 @@ import {
   executeTelegramPublish,
   splitTelegramCaption,
 } from '@reizoko/core';
+import { FakeVkTransport } from '../vk/fake-vk-transport.js';
 import type { PlatformConnectionRepository } from '../platform-connection/platform-connection-repository.js';
 import type { PlatformConnection, Publication } from '@reizoko/shared';
 import { bootstrapDatabase } from '../../../database/src/bootstrap.js';
@@ -236,6 +237,7 @@ describe('telegram publishing', () => {
       db.socialAccounts,
       db.platformConnections,
       transport,
+      new FakeVkTransport(),
     );
     const connectionService = new TelegramConnectionService(db.platformConnections, transport);
     transport.registerChat('@news', { id: -1001, title: 'News', username: 'news', canPublish: true });

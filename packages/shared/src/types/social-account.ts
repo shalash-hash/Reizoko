@@ -9,6 +9,8 @@ export interface SocialAccount {
   avatarMediaId?: string | null;
   /** Links destination to a PlatformConnection credential. */
   connectionId?: string | null;
+  /** Platform-specific destination metadata (e.g. VK target type, postAsGroup). */
+  platformMetadataJson?: string | null;
   isActive: boolean;
   connectionState: SocialAccountConnectionState;
   createdAt: string;
@@ -23,6 +25,7 @@ export interface CreateSocialAccountInput {
   avatarMediaId?: string | null;
   connectionId?: string | null;
   externalAccountId?: string | null;
+  platformMetadataJson?: string | null;
 }
 
 export interface UpdateSocialAccountInput {
@@ -31,5 +34,6 @@ export interface UpdateSocialAccountInput {
   avatarMediaId?: string | null;
   connectionId?: string | null;
   externalAccountId?: string | null;
+  platformMetadataJson?: string | null;
   connectionState?: SocialAccountConnectionState;
 }

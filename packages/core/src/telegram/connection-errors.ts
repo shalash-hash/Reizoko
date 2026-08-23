@@ -1,12 +1,25 @@
 export const CONNECTION_SECRET_MISSING_CODE = 'CONNECTION_SECRET_MISSING';
 
+export type ConnectionPlatform = 'telegram' | 'vk';
+
+export const CONNECTION_SECRET_MISSING_MESSAGES: Record<ConnectionPlatform, string> = {
+  telegram:
+    'Подключение Telegram требует повторного входа. Сохранённый ключ бота не найден в защищённом хранилище Windows. Подключите бота заново.',
+  vk:
+    'Подключение ВКонтакте требует повторной авторизации. Сохранённый токен доступа не найден в защищённом хранилище Windows. Подключите аккаунт заново.',
+};
+
+export function getConnectionSecretMissingMessage(platform: ConnectionPlatform): string {
+  return CONNECTION_SECRET_MISSING_MESSAGES[platform];
+}
+
 export class ConnectionSecretMissingError extends Error {
   readonly code = CONNECTION_SECRET_MISSING_CODE;
+  readonly platform: ConnectionPlatform;
 
-  constructor(
-    message = 'Подключение Telegram требует повторного входа. Сохранённый ключ бота не найден в защищённом хранилище Windows. Подключите бота заново.',
-  ) {
-    super(message);
+  constructor(platform: ConnectionPlatform = 'telegram', message?: string) {
+    super(message ?? getConnectionSecretMissingMessage(platform));
+    this.platform = platform;
     this.name = 'ConnectionSecretMissingError';
   }
 }
@@ -24,11 +37,11 @@ export function isConnectionSecretMissingError(error: unknown): boolean {
 
 export function toUserFacingConnectionError(error: unknown): string {
   if (error instanceof ConnectionSecretMissingError) {
-    return error.message;
+    return getConnectionSecretMissingMessage(error.platform);
   }
   if (error instanceof Error) {
     if (isConnectionSecretMissingError(error)) {
-      return 'Подключение Telegram требует повторного входа. Сохранённый ключ бота не найден в защищённом хранилище Windows. Подключите бота заново.';
+      return getConnectionSecretMissingMessage('telegram');
     }
     if (/подключён другой бот/i.test(error.message)) {
       return error.message;

@@ -11,6 +11,12 @@ use platforms::telegram::{
     telegram_connect_bot, telegram_delete_secret, telegram_diagnose_connection,
     telegram_send_media_group, telegram_send_message, telegram_send_photo, telegram_validate_chat,
 };
+use platforms::vk::{
+    vk_check_publication_target, vk_delete_secret, vk_fetch_vkid_profile, vk_get_community_info,
+    vk_get_current_user, vk_get_user_info, vk_list_manageable_communities, vk_open_url, vk_poll_oauth_status,
+    vk_probe_community_photo_upload, vk_probe_community_photo_upload_by_secret_ref, vk_probe_reizoko_server, vk_publish_wall_post, vk_resolve_screen_name,
+    vk_verify_community_token,
+};
 
 #[tauri::command]
 fn set_secret(key: String, value: String) -> Result<(), String> {
@@ -99,6 +105,21 @@ pub fn run() {
             telegram_send_media_group,
             telegram_delete_secret,
             telegram_diagnose_connection,
+            vk_open_url,
+            vk_get_current_user,
+            vk_fetch_vkid_profile,
+            vk_list_manageable_communities,
+            vk_resolve_screen_name,
+            vk_get_user_info,
+            vk_get_community_info,
+            vk_check_publication_target,
+            vk_publish_wall_post,
+            vk_delete_secret,
+            vk_probe_reizoko_server,
+            vk_poll_oauth_status,
+            vk_verify_community_token,
+            vk_probe_community_photo_upload,
+            vk_probe_community_photo_upload_by_secret_ref,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

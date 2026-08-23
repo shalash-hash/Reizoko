@@ -13,6 +13,7 @@ import { Check, X } from 'lucide-react';
 import { groupPlatformsByAvailability } from '../platforms/planned-catalog';
 import { PlatformIcon } from './PlatformIcon';
 
+import { AccountDialogOverlay } from './AccountDialogOverlay';
 import './platform-picker.css';
 
 
@@ -134,15 +135,13 @@ export function PlatformPicker({
 
   return (
 
-    <div className="platform-picker-overlay" onClick={onClose} role="presentation">
+    <AccountDialogOverlay onClose={onClose} className="platform-picker-overlay">
 
       <div
 
         className="platform-picker"
 
         data-testid="platform-picker"
-
-        onClick={(e) => e.stopPropagation()}
 
         role="dialog"
 
@@ -203,7 +202,7 @@ export function PlatformPicker({
 
       </div>
 
-    </div>
+    </AccountDialogOverlay>
 
   );
 

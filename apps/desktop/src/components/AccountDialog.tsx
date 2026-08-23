@@ -14,6 +14,7 @@ import { Button, IconButton } from '@reizoko/ui';
 import { X } from 'lucide-react';
 import { PlatformIcon } from './PlatformIcon';
 import { PlatformSelect } from './PlatformSelect';
+import { AccountDialogOverlay } from './AccountDialogOverlay';
 import './account-dialog.css';
 
 interface AccountDialogProps {
@@ -23,6 +24,7 @@ interface AccountDialogProps {
   onClose: () => void;
   onSubmit: (input: CreateSocialAccountInput) => Promise<void>;
   onConnectTelegram?: () => void;
+  onConnectVk?: () => void;
 }
 
 export function AccountDialog({
@@ -32,6 +34,7 @@ export function AccountDialog({
   onClose,
   onSubmit,
   onConnectTelegram,
+  onConnectVk,
 }: AccountDialogProps) {
   const isEditing = Boolean(account?.id);
   const [platformId, setPlatformId] = useState(account?.platformId ?? initialPlatformId ?? platforms[0]?.id ?? '');
@@ -72,16 +75,22 @@ export function AccountDialog({
     onClose();
   };
 
+  const handleConnectVk = () => {
+    onConnectVk?.();
+    onClose();
+  };
+
   const dialogTitle = isEditing ? 'Изменить профиль площадки' : 'Добавить профиль площадки';
   const showTelegramConnect =
     !isEditing && formConfig.connectionCapability === 'telegram_bot' && Boolean(onConnectTelegram);
+  const showVkConnect =
+    !isEditing && formConfig.connectionCapability === 'vk_oauth' && Boolean(onConnectVk);
 
   return (
-    <div className="account-dialog-overlay" onClick={onClose} role="presentation">
+    <AccountDialogOverlay onClose={onClose}>
       <div
         className="account-dialog"
         data-testid="account-dialog"
-        onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={dialogTitle}
@@ -130,7 +139,16 @@ export function AccountDialog({
             </section>
           ) : null}
 
-          {showTelegramConnect ? (
+          {showVkConnect ? (
+            <section className="account-dialog__connect-card" data-testid="account-vk-connect-card">
+              <p className="account-dialog__connect-card-text">{formConfig.realConnectionHint}</p>
+              <Button variant="primary" data-testid="account-vk-connect" onClick={handleConnectVk}>
+                {formConfig.realConnectionActionLabel}
+              </Button>
+            </section>
+          ) : null}
+
+          {showTelegramConnect || showVkConnect ? (
             <div className="account-dialog__section-divider" aria-hidden>
               <span>или создайте локальный профиль</span>
             </div>
@@ -187,6 +205,6 @@ export function AccountDialog({
           </Button>
         </footer>
       </div>
-    </div>
+    </AccountDialogOverlay>
   );
 }

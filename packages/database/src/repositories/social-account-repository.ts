@@ -19,6 +19,7 @@ interface SocialAccountRow {
   external_account_id: string | null;
   avatar_media_id: string | null;
   connection_id: string | null;
+  platform_metadata_json: string | null;
   connected_at: string;
   created_at: string | null;
   updated_at: string | null;
@@ -41,6 +42,7 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       externalAccountId: input.externalAccountId ?? null,
       avatarMediaId: input.avatarMediaId ?? null,
       connectionId: input.connectionId ?? null,
+      platformMetadataJson: input.platformMetadataJson ?? null,
       isActive: true,
       connectionState: input.connectionId ? 'connected' : 'local',
       createdAt: now,
@@ -50,8 +52,8 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
     await this.db.execute(
       `INSERT INTO social_accounts
        (id, platform_id, display_name, handle, external_account_id, avatar_media_id, connection_id,
-        connected_at, created_at, updated_at, deleted_at, is_active, connection_state)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?)`,
+        platform_metadata_json, connected_at, created_at, updated_at, deleted_at, is_active, connection_state)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 1, ?)`,
       [
         id,
         account.platformId,
@@ -60,6 +62,7 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
         account.externalAccountId,
         account.avatarMediaId,
         account.connectionId,
+        account.platformMetadataJson,
         now,
         now,
         now,
@@ -121,12 +124,16 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       input.externalAccountId !== undefined
         ? input.externalAccountId
         : existing.externalAccountId ?? null;
+    const platformMetadataJson =
+      input.platformMetadataJson !== undefined
+        ? input.platformMetadataJson
+        : existing.platformMetadataJson ?? null;
     const connectionState = input.connectionState ?? existing.connectionState;
 
     await this.db.execute(
       `UPDATE social_accounts
        SET display_name = ?, handle = ?, avatar_media_id = ?, connection_id = ?,
-           external_account_id = ?, connection_state = ?, updated_at = ?
+           external_account_id = ?, platform_metadata_json = ?, connection_state = ?, updated_at = ?
        WHERE id = ?`,
       [
         displayName,
@@ -134,6 +141,7 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
         avatarMediaId,
         connectionId,
         externalAccountId,
+        platformMetadataJson,
         connectionState,
         now,
         id,
@@ -215,6 +223,7 @@ export class SqliteSocialAccountRepository implements SocialAccountRepository {
       externalAccountId: row.external_account_id,
       avatarMediaId: row.avatar_media_id,
       connectionId: row.connection_id,
+      platformMetadataJson: row.platform_metadata_json,
       isActive: row.is_active === 1,
       connectionState: (row.connection_state as SocialAccount['connectionState']) ?? 'local',
       createdAt: row.created_at ?? row.connected_at,
