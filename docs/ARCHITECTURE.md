@@ -1,9 +1,10 @@
 # Reizoko — Architecture
 
 > **Главный документ контекста:** [MASTER_CONTEXT.md](./MASTER_CONTEXT.md)  
-> **Дорожная карта:** [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)
+> **Дорожная карта и статусы:** [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)  
+> **AI entry point:** [AI_CONTEXT_INDEX.md](./AI_CONTEXT_INDEX.md)
 
-## Current Stack (Stage 1)
+## Current Stack (Stage 1 + 1.5 in progress)
 
 - **Frontend:** React 19, TypeScript (strict)
 - **Desktop shell:** Tauri 2

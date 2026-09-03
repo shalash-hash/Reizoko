@@ -2,7 +2,9 @@
 
 > **Главный документ контекста проекта.**  
 > Передаётся новому AI-агенту или разработчику без истории предыдущих обсуждений.  
-> Актуализирован: **22 августа 2026** (старт Stage 1.5 — Connected & Publishing Desktop).
+> Актуализирован: **3 сентября 2026** (Stage 1.5 — Connected & Publishing Desktop).
+
+**AI entry point:** [AI_CONTEXT_INDEX.md](./AI_CONTEXT_INDEX.md) · Handoff: [HANDOFF_TO_CHATGPT.md](./HANDOFF_TO_CHATGPT.md) · Decisions: [DECISIONS_CHANGELOG.md](./DECISIONS_CHANGELOG.md) · Process: [AI_COLLABORATION_PROTOCOL.md](./AI_COLLABORATION_PROTOCOL.md)
 
 См. также: [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md) · [ROADMAP.md](./ROADMAP.md)
 
@@ -17,7 +19,7 @@ Web / Cloud / Server development: DEFERRED.
 ```
 
 **Stage 1 baseline:** `v0.1.0-stage1` — Local Desktop ✅ COMPLETE.  
-**Current stage:** Stage 1.5 — Connected & Publishing Desktop 🟡
+**Current stage:** Stage 1.5 — Connected & Publishing Desktop 🟡 (1.5.1–1.5.6 ✅; next: 1.5.7 Instagram/Meta)
 
 ---
 
@@ -341,7 +343,7 @@ Platform-neutral prepared snapshot Reizoko (не Meta/TG/VK API payload):
 
 | Поле | Назначение |
 |------|------------|
-| `formatVersion` | `1` |
+| `formatVersion` | `1` \| `2` (v2 includes `presentation` overrides from Platform Composer) |
 | `platformId` | Площадка |
 | `transformedContent` | Результат `PlatformAdapter.transform()` на момент подготовки |
 | `validationIssues` | Результат `validate()` — errors/warnings **per target**, не блокируют весь batch |
@@ -482,7 +484,7 @@ Tauri-реализация: `apps/desktop/src/db/tauri-database-client.ts` (об
 
 ### Migrations
 
-`packages/database/src/migrations/index.ts` — **migration v1 `initial_schema`**.
+`packages/database/src/migrations/index.ts` — migrations **v1–v8** (latest: `v8-vk-publication-targets`).
 
 Таблицы:
 - `schema_migrations`
@@ -819,7 +821,7 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 | Web client | PLANNED STAGE 2 | |
 | Server scheduler | PLANNED STAGE 3 | Natural/Exact time modeled |
 | OAuth + API publishing | PLANNED STAGE 3 | |
-| Automated tests | ✅ DONE | 90 vitest + smoke suite + `pnpm smoke:telegram` + `pnpm stage1:acceptance` |
+| Platform Composer / overrides | ✅ DONE | Snapshot v2, migration v7, smoke:composer (Stage 1.5.5) |
 | Backup/export | ✅ DONE | `.reizoko-backup` + JSON export + restore (Stage 1.14) |
 | Production EXE build | DONE | Windows release build verified |
 | docs/screenshots | DONE | 14 PNG files |
@@ -829,17 +831,20 @@ Sidebar sections **Календарь, История, Аккаунты, Пла�
 ## 17. CURRENT POSITION
 
 ```text
-Stage 1 — Local Desktop ✅ COMPLETE
+Stage 1 — Local Desktop ✅ COMPLETE (baseline v0.1.0-stage1)
 
-Current product state:
-Production-ready Stage 1 local desktop baseline.
+Stage 1.5 — Connected & Publishing Desktop 🟡 CURRENT
+  ✅ Telegram bot connection + publish
+  ✅ VK OAuth + publish (migration v8)
+  ✅ Platform Composer + snapshot v2
+  ➡️ Next: 1.5.7 Instagram / Meta Connection
 
-Next architectural stage:
-Stage 2 — Web + Shared Hosting + Sync (planning NOT STARTED)
+Stage 2 — Web + Shared Hosting + Sync ⬜ DEFERRED (planning not started)
+Stage 3 — VPS + Server Automation ⬜ DEFERRED
 ```
 
-**Baseline version:** 0.1.0  
-**Acceptance record:** [STAGE1_ACCEPTANCE.md](./STAGE1_ACCEPTANCE.md)
+**Authoritative task status:** [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)  
+**Acceptance record (historical):** [STAGE1_ACCEPTANCE.md](./STAGE1_ACCEPTANCE.md) — Stage 1 gate only.
 
 **Статус 1.21:** Stage 1 Completion Gate закрыт — `pnpm stage1:acceptance`, chained smoke orchestrator, artifact verification.
 
@@ -863,7 +868,7 @@ Stage 2 — Web + Shared Hosting + Sync (planning NOT STARTED)
 | Publication layer | ✅ DONE | Batch + snapshot architecture (Stage 1.12) |
 | Revision history | ✅ DONE | Drawer UI + restore + manual checkpoint |
 | Social accounts | ✅ DONE | Local profiles, no OAuth/secrets (Stage 1.13) |
-| Tests | ✅ DONE | 67 vitest + smoke suite + `pnpm stage1:acceptance` |
+| Tests | ✅ DONE | vitest + smoke suite + `pnpm stage1:acceptance` |
 | Backup/restore | ✅ DONE | Portable `.reizoko-backup`, validate-first restore (Stage 1.14) |
 | Background test mode | ✅ DONE | Smoke/E2E launch hidden, isolated DB (Stage 1.15) |
 | Release smoke test | ✅ DONE | `scripts/release-smoke-test.mjs` — phases A–G; chained via `run-targeted-suite.mjs` |
@@ -880,19 +885,18 @@ Stage 2 — Web + Shared Hosting + Sync (planning NOT STARTED)
 
 ---
 
-## 19. Git State
+## 19. Git & GitHub (source of truth)
 
 | Параметр | Значение |
 |----------|----------|
-| Branch | `master` |
-| Commits | Initial commit `0d7125b` + local changes (uncommitted) |
-| Remote | `https://github.com/shalash-hash/Reizoko.git` |
-| Uncommitted | **Весь проект** — 15 untracked top-level paths |
-| Staged changes | Нет |
-| Diff | N/A (нет baseline commit) |
+| Repository | `https://github.com/shalash-hash/Reizoko.git` |
+| Default branch | `master` |
+| **Exact HEAD** | **READ FROM GIT / GITHUB** — не хранить в MASTER или HANDOFF как канон |
+| Commit / push | **Только по явной команде пользователя** |
 
-Untracked paths:
-`.gitignore`, `.prettierrc`, `.superdesign/`, `README.md`, `apps/`, `dev.bat`, `docs/`, `eslint.config.js`, `package.json`, `packages/`, `platforms/`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `scripts/`, `tsconfig.base.json`
+Семантический снимок для AI: [HANDOFF_TO_CHATGPT.md](./HANDOFF_TO_CHATGPT.md).
+
+> **HISTORICAL:** ранние версии этого файла описывали «весь проект untracked» — это устарело; репозиторий на GitHub актуален.
 
 ---
 
@@ -960,6 +964,18 @@ Frontend dist: `apps/desktop/dist/`
 
 ## 22. Правила разработки
 
+### Разрешение конфликтов (канон vs код vs планы)
+
+1. Последнее **явное решение пользователя**.
+2. **MASTER_CONTEXT** (этот файл).
+3. Более новый **профильный authoritative doc** (напр. DEVELOPMENT_PLAN > ROADMAP для статусов).
+4. **Текущий код** — факт реализации, но **не** автоматическое product decision.
+5. Historical / stale docs (STAGE1_ACCEPTANCE, старые снимки).
+
+Различие документов **не означает** автоматический rollback. Не переписывать MASTER под код без согласования (**class C** — см. [AI_COLLABORATION_PROTOCOL.md](./AI_COLLABORATION_PROTOCOL.md)).
+
+### Правила кода и процесса
+
 1. **TypeScript strict** — обязателен.
 2. **UI не обращается к SQLite напрямую** — только через repositories/services.
 3. **Не смешивать platform-specific logic с core** — только через Platform Adapter.
@@ -994,14 +1010,11 @@ Frontend dist: `apps/desktop/dist/`
 
 ## 24. Что делать следующим
 
-См. [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md):
+См. [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) — **единственный authoritative список статусов задач**.
 
-- **🟡 IN PROGRESS:** *(none — Stage 1 complete)*
-- **✅ COMPLETE:** Stage 1 — Local Desktop (baseline 0.1.0)
-- **➡️ NEXT:** Stage 2 planning (not started)
+- **🟡 CURRENT:** Stage 1.5 — Connected & Publishing Desktop
+- **➡️ NEXT (1.5.7):** Instagram / Meta Connection
+- **⬜ PLANNED:** 1.5.8–1.5.15 (publisher engine unification, publish UX, scheduler, queue, acceptance)
+- **⬜ DEFERRED:** Stage 2 (Web/Cloud Sync), Stage 3 (VPS automation)
 
-1.21 Stage 1 Completion Gate **закрыт** (`pnpm stage1:acceptance`, `docs/STAGE1_ACCEPTANCE.md`).
-1.15 Cleanup & Technical Debt **закрыт** (audit, media size, smoke isolation/lifecycle, docs).
-1.14 Quality & Tooling **закрыт** (quality commands, coverage, backup/restore, smoke suite).
-1.13 Local Accounts Architecture **закрыт** (migration v4, repository, service, Accounts UI, account tabs, tests, smoke).
-1.11 Revision History **закрыт** (migration v2, policy, UI, tests, smoke).
+Stage 1 Completion Gate **закрыт** (`pnpm stage1:acceptance`, `docs/STAGE1_ACCEPTANCE.md`).

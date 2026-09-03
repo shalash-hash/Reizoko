@@ -1,0 +1,18 @@
+---
+description: Mandatory AI collaboration canon — read before substantive work
+alwaysApply: true
+---
+
+# Reizoko — AI collaboration (mandatory)
+
+Before **substantive** work (features, architecture, product UX, data contracts):
+
+1. Read `docs/AI_CONTEXT_INDEX.md` → `docs/MASTER_CONTEXT.md` → `docs/HANDOFF_TO_CHATGPT.md` → `docs/DECISIONS_CHANGELOG.md`.
+2. Read task-specific authoritative docs (e.g. `docs/DEVELOPMENT_PLAN.md`, `docs/platform-connections/`).
+3. Classify change: **A** (aligned) | **B** (implementation-only) | **C** (new decision) | **D** (conflict — ask user).
+4. **No silent rollback** of documented decisions. **No silent canon rewrite** without user approval.
+5. **Class C:** update `docs/DECISIONS_CHANGELOG.md` + affected canonical docs; update `docs/HANDOFF_TO_CHATGPT.md` if useful.
+6. **Commit/push only on explicit user request.** Never commit secrets or build artifacts.
+7. GitHub = shared source of truth. Exact HEAD: read from Git, not from HANDOFF.
+
+Full process: `docs/AI_COLLABORATION_PROTOCOL.md`

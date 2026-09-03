@@ -35,10 +35,12 @@ apps\desktop\src-tauri\target\release\reizoko-desktop.exe
 
 | Документ | Назначение |
 |----------|------------|
+| [docs/AI_CONTEXT_INDEX.md](docs/AI_CONTEXT_INDEX.md) | **Точка входа для AI** (ChatGPT, Cursor) |
 | [docs/MASTER_CONTEXT.md](docs/MASTER_CONTEXT.md) | Полный контекст проекта |
 | [docs/DEVELOPMENT_PLAN.md](docs/DEVELOPMENT_PLAN.md) | Дорожная карта и статусы |
+| [docs/AI_COLLABORATION_PROTOCOL.md](docs/AI_COLLABORATION_PROTOCOL.md) | USER ↔ ChatGPT ↔ Cursor ↔ GitHub |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Архитектура |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы Stage 1–3 |
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Этапы Stage 1–3 (high-level) |
 
 ## Скрипты
 

@@ -1,5 +1,8 @@
 # Reizoko — Roadmap
 
+> ⚠️ **Status note:** high-level roadmap only. **Authoritative current status:** [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md) and [MASTER_CONTEXT.md](./MASTER_CONTEXT.md) §17.  
+> This file's «Stage 1 current» label is **STALE** — project is in **Stage 1.5**.
+
 > **Актуальный статус и нумерованный план:** [DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)  
 > **Полный контекст проекта:** [MASTER_CONTEXT.md](./MASTER_CONTEXT.md)
 
